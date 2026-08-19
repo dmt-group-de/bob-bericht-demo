@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KI-Büro für Handwerksbetriebe · Arbeitsbericht-Assistent · Prototyp</title>
+<meta name="description" content="Klickbarer Prototyp des Arbeitsbericht-Assistenten für Handwerksbetriebe. Von der Sprachnotiz auf der Baustelle zur fertigen Doku, mit Beleg an jeder Zeile und ohne erfundene Angaben.">
+<!-- Nicht in Suchmaschinen. Der Prototyp wird gezielt weitergegeben,
+     er soll nicht ueber eine Suche gefunden werden. -->
+<meta name="robots" content="noindex, nofollow">
+<!-- Vorschaukarte, damit der Link in WhatsApp und LinkedIn etwas zeigt
+     statt einer nackten Adresse. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KI-Büro für Handwerksbetriebe">
+<meta property="og:title" content="Arbeitsbericht-Assistent für Handwerksbetriebe">
+<meta property="og:description" content="Von der Sprachnotiz auf der Baustelle zur fertigen Doku. Klickbarer Prototyp, alle Daten sind Beispiele.">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%231c1c1c"/><text x="16" y="23" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="700" fill="%232f6fb0" text-anchor="middle">B</text></svg>'>
+<style>
+  /* ================================================================
+     KI-Buero fuer Handwerksbetriebe, Arbeitsbericht-Assistent
+     Gleiche Schale wie Angebots- und Rechnungs-Assistent, damit die
+     drei als EIN System wirken. Signalfarbe ist Blau, das ist im
+     Namens-Kanon die Farbe des Arbeitsbericht-Assistenten.
+     Eine einzige Datei, keine fremden Bibliotheken, laeuft offline.
+     ================================================================ */
+  :root {
+    --anthrazit: #1c1c1c;
+    --signal: #2f6fb0;
+    --signal-tief: #1f4f80;
+    --signal-hell: #eef4fa;
+    --papier: #f7f6f3;
+    --weiss: #ffffff;
+    --text: #22252a;
+    --text-leise: #5f646d;
+    --linie: #e4e1da;
+    --rot: #a63a2c;
+    --rot-hell: #fdf0ee;
+    --gruen: #2e7d4f;
+    --gruen-hell: #edf6f0;
+    --gold: #e6a819;
+    --gold-hell: #fdf7e9;
+    --gold-tief: #9a6f0d;
+    --schatten: 0 1px 2px rgba(28,28,28,.06), 0 8px 24px rgba(28,28,28,.05);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--papier); color: var(--text);
+    font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: var(--signal-tief); }
+  ul, ol { list-style: none; }
+
+  .app { display: flex; min-height: 100%; }
+  .nav {
+    width: 258px; flex: 0 0 258px; background: var(--anthrazit);
+    display: flex; flex-direction: column; gap: 26px; padding: 22px 16px;
+  }
+  .marke { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+  .monogramm {
+    width: 38px; height: 38px; flex: 0 0 38px; border-radius: 9px;
+    background: linear-gradient(150deg, #262626, #151515);
+    border: 1px solid rgba(47,111,176,.5);
+    display: grid; place-items: center;
+    font-size: 19px; font-weight: 800; color: var(--signal);
+  }
+  .marke-text { display: flex; flex-direction: column; min-width: 0; }
+  .marke-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .01em; }
+  .marke-sub { font-size: 10px; font-weight: 700; letter-spacing: .13em;
+               text-transform: uppercase; color: var(--signal); }
+  .nav-liste { display: flex; flex-direction: column; gap: 3px; }
+  .nav-punkt {
+    display: flex; align-items: center; gap: 11px; width: 100%;
+    padding: 10px 12px; border-radius: 9px; min-height: 44px;
+    color: rgba(255,255,255,.7); font-size: 14.5px; text-align: left;
+  }
+  .nav-punkt:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .nav-punkt[aria-current="page"] { background: rgba(47,111,176,.28); color: #fff; font-weight: 600; }
+  .nav-punkt[aria-current="page"] .nav-icon { color: var(--signal); }
+  .nav-icon { width: 19px; flex: 0 0 19px; text-align: center; color: rgba(255,255,255,.5); }
+  .nav-zahl {
+    margin-left: auto; font-size: 12px; font-weight: 700; padding: 1px 8px;
+    border-radius: 999px; background: rgba(47,111,176,.3); color: #cfe0f2;
+  }
+  .nav-fuss { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+  .nav-hinweis {
+    background: rgba(255,255,255,.05); border-radius: 10px; padding: 12px 13px;
+    font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,.64);
+  }
+  .nav-hinweis b { color: rgba(255,255,255,.92); }
+  .nutzer { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+  .nutzer-kreis {
+    width: 34px; height: 34px; flex: 0 0 34px; border-radius: 999px;
+    background: var(--signal); color: #fff;
+    display: grid; place-items: center; font-size: 12.5px; font-weight: 800;
+  }
+  .nutzer-name { font-size: 13.5px; font-weight: 600; color: #fff; }
+  .nutzer-rolle { font-size: 11.5px; color: rgba(255,255,255,.52); }
+
+  .inhalt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .kopf {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 18px 26px; background: var(--weiss); border-bottom: 1px solid var(--linie);
+  }
+  .kopf-text { min-width: 0; flex: 1; }
+  .kopf-kicker { font-size: 11px; font-weight: 700; letter-spacing: .13em;
+                 text-transform: uppercase; color: var(--signal-tief); }
+  .kopf-titel { font-size: 21px; }
+  .bahn { flex: 1; min-width: 0; overflow-y: auto; padding: 22px 26px 60px; }
+
+  .schalter { display: flex; gap: 4px; padding: 4px; background: #f0efeb;
+              border-radius: 999px; flex-wrap: wrap; }
+  .schalter-knopf { padding: 8px 14px; border-radius: 999px; font-size: 13px;
+                    font-weight: 700; color: var(--text-leise); min-height: 40px; }
+  .schalter-knopf:hover { color: var(--text); }
+  .schalter-knopf[aria-pressed="true"] { background: var(--anthrazit); color: #fff; }
+
+  /* Der Kippschalter auf „Assistent anlernen". Er heisst bewusst NICHT
+     `.schalter`, denn diesen Namen traegt weiter oben schon der
+     Gewerke-Umschalter. Zwei Bedeutungen unter einem Klassennamen haetten
+     beide zerlegt. */
+  .kippe-zeile { display: flex; gap: 12px; align-items: flex-start;
+                 padding: 11px 0; border-bottom: 1px solid var(--linie); }
+  .kippe-zeile:last-child { border-bottom: 0; }
+  .kippe { position: relative; width: 46px; height: 27px; flex: 0 0 46px;
+           border-radius: 999px; background: #d5d2ca; transition: background .15s; }
+  .kippe[aria-checked="true"] { background: var(--signal); }
+  .kippe:focus-visible { outline: 2px solid var(--signal-tief); outline-offset: 2px; }
+  .kippe-knopf { position: absolute; top: 3px; left: 3px; width: 21px; height: 21px;
+                 border-radius: 999px; background: #fff; transition: transform .15s;
+                 box-shadow: 0 1px 3px rgba(0,0,0,.28); }
+  .kippe[aria-checked="true"] .kippe-knopf { transform: translateX(19px); }
+  .kippe-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .kippe-text b { font-size: 14px; }
+  .kippe-text span { font-size: 12.5px; color: var(--text-leise); line-height: 1.5; }
+  /* Ein Zahlenfeld in einer Tabellenzelle. Ohne Deckel zieht es die Spalte
+     auf und die Preisliste passt auf dem Handy nicht mehr. */
+  .zahl-feld { max-width: 112px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .karte { background: var(--weiss); border: 1px solid var(--linie);
+           border-radius: var(--radius); box-shadow: var(--schatten); }
+  .karte-kopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+                padding: 15px 18px; border-bottom: 1px solid var(--linie); }
+  .karte-titel { font-size: 15.5px; }
+  .karte-leib { padding: 16px 18px; }
+  .gitter { display: grid; gap: 14px; }
+  .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-haupt { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
+  .stapel { display: flex; flex-direction: column; gap: 14px; }
+
+  .kennzahl { background: var(--weiss); border: 1px solid var(--linie);
+              border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--schatten); }
+  .kennzahl-label { font-size: 11px; font-weight: 700; letter-spacing: .1em;
+                    text-transform: uppercase; color: var(--text-leise); }
+  .kennzahl-wert { font-size: 29px; font-weight: 800; line-height: 1.15; margin-top: 4px;
+                   font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .kennzahl-note { font-size: 12.5px; color: var(--text-leise); margin-top: 2px; }
+  .kennzahl-note.gut { color: var(--gruen); font-weight: 600; }
+  .kennzahl-note.warn { color: var(--rot); font-weight: 600; }
+
+  .pille { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+           border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .p-signal { background: var(--signal-hell); color: var(--signal-tief); }
+  .p-gruen { background: var(--gruen-hell); color: var(--gruen); }
+  .p-gold { background: rgba(230,168,25,.18); color: var(--gold-tief); }
+  .p-rot { background: var(--rot-hell); color: var(--rot); }
+  .p-grau { background: #f0f0ee; color: var(--text-leise); }
+
+  .knopf { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+           padding: 11px 18px; border-radius: 9px; font-size: 14.5px; font-weight: 700;
+           min-height: 44px; border: 1px solid transparent; }
+  .k-signal { background: var(--signal); color: #fff; }
+  .k-signal:hover { background: var(--signal-tief); }
+  .k-dunkel { background: var(--anthrazit); color: #fff; }
+  .k-dunkel:hover { background: #313131; }
+  /* Ein Knopf, der durch eine Regel angehalten ist, muss auch so aussehen.
+     Ohne diese Regel bleibt er voll eingefaerbt, und der Nutzer klickt
+     dreimal, bevor er den Grund darueber liest. */
+  .knopf[disabled] { opacity: .45; cursor: not-allowed; }
+  .k-rand { border-color: var(--linie); background: var(--weiss); }
+  .k-rand:hover { border-color: var(--signal); }
+  .k-still { color: var(--text-leise); }
+  .k-still:hover { color: var(--text); }
+
+  .feld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .feld-label { font-size: 11px; font-weight: 700; letter-spacing: .09em;
+                text-transform: uppercase; color: var(--text-leise); }
+  .feld input, .feld textarea {
+    font: inherit; width: 100%; padding: 9px 11px; border: 1px solid var(--linie);
+    border-radius: 8px; background: var(--weiss); color: var(--text); min-height: 42px;
+  }
+  .feld textarea { min-height: 84px; resize: vertical; }
+  /* Ein aus Platzgruenden mehrzeiliges Wertfeld bleibt so hoch wie ein
+     einzeiliges, sonst springt das Layout je nach Textlaenge. */
+  .feld textarea.eng { min-height: 42px; resize: vertical; }
+  .feld input:focus, .feld textarea:focus {
+    outline: 2px solid rgba(47,111,176,.55); outline-offset: 1px; border-color: var(--signal); }
+
+  .beleg { font-size: 12.5px; color: var(--text-leise); display: flex; gap: 6px;
+           align-items: baseline; flex-wrap: wrap; }
+
+  .kasten { border-radius: 10px; padding: 13px 15px; border-left: 4px solid; }
+  .kasten-titel { font-size: 11px; font-weight: 800; letter-spacing: .11em;
+                  text-transform: uppercase; margin-bottom: 5px; }
+  .kasten-text { font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+  .kasten.signal { background: var(--signal-hell); border-color: var(--signal); }
+  .kasten.signal .kasten-titel { color: var(--signal-tief); }
+  .kasten.gruen { background: var(--gruen-hell); border-color: var(--gruen); }
+  .kasten.gruen .kasten-titel { color: var(--gruen); }
+  .kasten.gold { background: var(--gold-hell); border-color: var(--gold); }
+  .kasten.gold .kasten-titel { color: var(--gold-tief); }
+  .kasten.rot { background: var(--rot-hell); border-color: var(--rot); }
+  .kasten.rot .kasten-titel { color: var(--rot); }
+  .kasten.grau { background: #f4f4f1; border-color: #b8b8b1; }
+  .kasten.grau .kasten-titel { color: var(--text-leise); }
+
+  .tabelle-rahmen { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 540px; }
+  th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .09em;
+       text-transform: uppercase; color: var(--text-leise);
+       padding: 9px 14px; border-bottom: 1px solid var(--linie); white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--linie); font-size: 14px;
+       vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr.klickbar:hover { background: var(--signal-hell); cursor: pointer; }
+  .zahl { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .offen-zelle { color: var(--rot); font-weight: 700; }
+
+  .liste-zeile { display: flex; align-items: center; gap: 14px; padding: 13px 18px;
+                 border-bottom: 1px solid var(--linie); width: 100%; text-align: left;
+                 min-height: 44px; }
+  .liste-zeile:last-child { border-bottom: 0; }
+  .liste-zeile:hover { background: var(--signal-hell); }
+  .kanal { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 9px;
+           display: grid; place-items: center; font-size: 15px; background: #f1f0ec; }
+  /* Beide Zeilen muessen BLOCK sein, sonst laufen sie inline zusammen und
+     brechen auf schmalen Bildschirmen nicht um. Dazu `overflow-wrap`, weil
+     deutsche Komposita wie „Wohnungsgenossenschaft" sonst als ein
+     unteilbares Wort den Rahmen sprengen. */
+  .liste-haupt { min-width: 0; flex: 1; }
+  .liste-titel { display: block; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .liste-sub { display: block; font-size: 12.5px; color: var(--text-leise); overflow-wrap: anywhere; }
+  .liste-rechts { text-align: right; display: flex; flex-direction: column;
+                  gap: 3px; align-items: flex-end; flex-shrink: 0; }
+
+  .schritte { display: flex; gap: 8px; flex-wrap: wrap; }
+  .schritt { display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+             border-radius: 999px; background: #f0efeb; font-size: 12.5px;
+             font-weight: 600; color: var(--text-leise); min-height: 40px; }
+  .schritt.aktiv { background: var(--anthrazit); color: #fff; }
+  .schritt.fertig { background: var(--signal-hell); color: var(--signal-tief); }
+
+  /* Ein Foto ist hier bewusst KEIN Bild, sondern seine Beschreibung mit
+     Uhrzeit. Ein eingebettetes Bild waere eine lange base64-Zeichenkette,
+     und genau die darf nicht durch die Modellausgabe wandern. */
+  .foto { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px;
+          border: 1px solid var(--linie); border-radius: 10px; background: var(--weiss); }
+  .foto-nr { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 8px;
+             background: var(--signal-hell); color: var(--signal-tief);
+             display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+  .foto-text { min-width: 0; }
+
+  .fuss { padding: 18px 26px 26px; color: var(--text-leise); font-size: 12px;
+          border-top: 1px solid var(--linie); background: var(--weiss); }
+
+  @media (max-width: 900px) {
+    .app { flex-direction: column; }
+    .nav { width: 100%; flex: none; flex-direction: row; align-items: center;
+           gap: 12px; padding: 12px 14px; overflow-x: auto; }
+    .marke { flex: 0 0 auto; padding: 0; }
+    .marke-text { display: none; }
+    .nav-liste { flex-direction: row; gap: 4px; }
+    .nav-punkt { padding: 9px 12px; white-space: nowrap; }
+    .nav-icon { display: none; }
+    .nav-fuss { display: none; }
+    .kopf, .bahn, .fuss { padding-left: 16px; padding-right: 16px; }
+    .kopf-text { flex: 1 1 100%; }
+    .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g2, .g-haupt { grid-template-columns: minmax(0, 1fr); }
+    .kennzahl-wert { font-size: 24px; }
+  }
+  @media (max-width: 480px) {
+    .g4 { grid-template-columns: minmax(0, 1fr); }
+    .kopf-titel { font-size: 18px; }
+    .schalter-knopf { padding: 8px 11px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+<div id="wurzel"></div>
+
+<script>
+/* ==================================================================
+   Arbeitsbericht-Assistent fuer Handwerksbetriebe, Prototyp
+   ------------------------------------------------------------------
+   WAS DAS IST
+     Ein klickbarer Prototyp, kein Produkt. Alle Betriebe, Kunden,
+     Monteure, Baustellen und Preise sind erfunden.
+
+   DIE KETTE
+     Dritter Teil neben Angebots- und Rechnungs-Assistent. Derselbe
+     Betrieb, dieselben Kunden, dieselbe Preisliste. Was hier auf der
+     Baustelle aufgenommen wird, taucht im Rechnungs-Assistenten als
+     Stunde, als Material oder als Nachtrag wieder auf. Die
+     Nachtragsnummern sind bewusst dieselben.
+
+   DIE FUENF PFLICHTREGELN
+     1. Jede Zeile traegt ihren BELEG, die Stelle im Band oder das
+        Foto mit seiner Uhrzeit.
+     2. Was fehlt, steht sichtbar da, statt still ergaenzt zu werden.
+     3. Die Anrede wird NIE geraten.
+     4. Nichts geht raus ohne Freigabe durch den Chef.
+     5. IM BERICHT STEHT NUR, WAS GESAGT ODER FOTOGRAFIERT WURDE.
+        Erfunden wird nichts. Weicht die genannte Zeit von den
+        Zeitstempeln der Fotos ab, steht BEIDES da, und der Assistent
+        entscheidet nicht, welche stimmt.
+
+   WARUM EIN FOTO HIER KEIN BILD IST
+     Ein eingebettetes Bild waere eine lange base64-Zeichenkette. Die
+     darf nicht durch die Modellausgabe wandern, ein einziges falsches
+     Zeichen faellt sonst niemandem auf. Fotos stehen deshalb als
+     Beschreibung mit Uhrzeit da, und das ist im Prototyp auch
+     ehrlicher, weil es um den Ablauf geht und nicht um Bilder.
+
+   BENENNUNG
+     In der Anwendung heisst er ueberall „Arbeitsbericht-Assistent".
+     Der Figurenname Ben gehoert nicht in eine Produktoberflaeche.
+   ================================================================== */
+
+/* Herkunft einer erkannten Angabe.
+     gesagt  woertlich in der Sprachnotiz, mit Stelle im Band
+     foto    aus einem Foto, mit Nummer und Uhrzeit
+     gerät   vom Telefon selbst, Standort oder Zeitstempel
+     fehlt   steht nirgends, wird nicht ergaenzt */
+const CHEF = { name: 'Heiko Brandt', rolle: 'Inhaber', kuerzel: 'HB' };
+
+const GEMEINSAME_REGELN = [
+  'Kein Bericht geht raus, bevor Heiko ihn freigegeben hat.',
+  'Im Bericht steht nur, was gesagt oder fotografiert wurde. Erfunden wird nichts.',
+  'Jede Zeile trägt ihren Beleg, die Stelle im Band oder das Foto mit seiner Uhrzeit.',
+  'Weicht die genannte Zeit von den Zeitstempeln der Fotos ab, steht beides da. Der Assistent entscheidet nicht, welche stimmt.',
+  'Ein Nachtrag ohne Bestätigung des Kunden geht als offen ins Büro und bleibt von der Rechnung fern.'
+];
+
+const GEWERKE = {
+  elektro: {
+    kurz: 'Elektro',
+    betrieb: 'Elektro Brandt',
+    zusatz: 'Elektrotechnik für Wohnen und Gewerbe',
+    abends: '0 Minuten',
+    abendsnote: 'vorher jeden Abend eine Stunde',
+    eigeneRegel: 'Arbeiten unter Spannung werden nie ohne Foto der Freischaltung dokumentiert.',
+    preisliste: [
+      { name: 'Monteurstunde', preis: 68, einheit: 'je Stunde' },
+      { name: 'Wanddurchbruch herstellen', preis: 96, einheit: 'je Stück' },
+      { name: 'Anfahrt und Terminabstimmung', preis: 45, einheit: 'je Wohnung' },
+      { name: 'Leitung NYM 5x6 verlegen', preis: 14.9, einheit: 'je Meter' }
+    ],
+    berichte: [
+      {
+        id: 'B-4417', monteur: 'Timo Krey', datum: '14.08.2026',
+        kunde: 'Sandra Kühn', auftraggeber: 'privat', baustelle: 'Ahornstraße 14, Erdgeschoss',
+        auftrag: 'Auftrag zu Angebot A-1042, Rechnung R-2026-0412',
+        aufnahme: 'Sprachnotiz 1:12 Minuten, 6 Fotos', frist: 'heute', status: 'offen',
+        transkript: 'Also, heute im Erdgeschoss weitergemacht. Wohnzimmer und Flur sind komplett verkabelt, in der Küche fehlt noch die Herdzuleitung. Wir haben drei Durchbrüche gemacht, die waren im Plan nicht drin, die Bauherrin hat das gesehen und war einverstanden. Angefangen halb acht, jetzt ist es kurz nach vier. Wir waren zu zweit.',
+        erkannt: [
+          { feld: 'Baustelle', wert: 'Ahornstraße 14', güte: 'gerät', beleg: 'Standort des Telefons beim Aufnehmen' },
+          { feld: 'Gemacht', wert: 'Wohnzimmer und Flur verkabelt', güte: 'gesagt', beleg: 'Band ab 0:04' },
+          { feld: 'Noch offen', wert: 'Herdzuleitung Küche', güte: 'gesagt', beleg: 'Band ab 0:14' },
+          { feld: 'Zusätzlich', wert: 'drei Wanddurchbrüche, nicht im Plan', güte: 'gesagt', beleg: 'Band ab 0:22, dazu Foto 4' },
+          { feld: 'Einverständnis', wert: 'mündlich von der Bauherrin', güte: 'gesagt', beleg: 'Band ab 0:31, nichts Schriftliches' },
+          { feld: 'Arbeitszeit', wert: 'halb acht bis kurz nach vier, zu zweit', güte: 'gesagt', beleg: 'Band ab 0:44, wörtlich „Angefangen halb acht, jetzt ist es kurz nach vier. Wir waren zu zweit.“' },
+          { feld: 'Wetter und Behinderungen', wert: '', güte: 'fehlt', beleg: 'nicht erwähnt' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:48', was: 'Wohnzimmer, Leitungen in der offenen Wand' },
+          { nr: 2, zeit: '10:15', was: 'Flur, Dosen gesetzt' },
+          { nr: 3, zeit: '11:40', was: 'Küche, Stelle für die Herdzuleitung' },
+          { nr: 4, zeit: '13:05', was: 'Wanddurchbruch zum Flur, mit Zollstock' },
+          { nr: 5, zeit: '14:22', was: 'Verteiler offen, sechs Automaten gesetzt' },
+          { nr: 6, zeit: '16:05', was: 'Erdgeschoss besenrein, Feierabend' }
+        ],
+        zeitpruefung: { gesagt: 'halb acht bis kurz nach vier', fotos: '07:48 bis 16:05',
+          hinweis: 'Eine genaue Uhrzeit hat niemand genannt. Der Assistent rechnet aus „halb acht“ keine halb acht Uhr und aus „kurz nach vier“ keine zehn nach vier, das wäre erfunden. Er stellt hin, was gesagt wurde, und daneben, was die Zeitstempel der Fotos belegen. Welche Zeit gilt, entscheidest du.' },
+        stundenHinweis: 'Der Auftrag ist nach Einheitspreisen kalkuliert, also je Steckdose und je Meter Leitung. Die Arbeitszeit dieses Tages steht im Bericht als Nachweis, sie wird NICHT zusätzlich abgerechnet. Wer beides abrechnet, kassiert zweimal für dieselbe Arbeit und verliert den Kunden.',
+        abrechenbar: [
+          { name: 'Wanddurchbruch herstellen', menge: 3, art: 'nachtrag', bestaetigung: 'liegt vor',
+            zusatz: 'nicht im Plan enthalten',
+            beleg: 'Band ab 0:22 und Foto 4. Nachtrag N-118, von Frau Kühn noch am selben Tag per WhatsApp bestätigt' }
+        ]
+      },
+      {
+        id: 'B-4416', monteur: 'Sascha Öz', datum: '13.08.2026',
+        kunde: 'Markus Thelen', auftraggeber: 'Autohaus Thelen', baustelle: 'Mitarbeiterparkplatz',
+        auftrag: 'Auftrag zu Angebot A-1041, Rechnung R-2026-0411',
+        aufnahme: 'Sprachnotiz 0:48 Minuten, 4 Fotos', frist: 'heute', status: 'offen',
+        transkript: 'Beide Ladepunkte hängen. Der Kabelweg ging nicht wie geplant durch den Hof, da liegt eine Leitung vom Gas, also sind wir außen rum. Das waren gut sechs Stunden mehr. Der Chef war nicht da, ich habe niemanden erreicht. Gemessen habe ich 46 Meter.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'zwei Ladepunkte montiert', güte: 'gesagt', beleg: 'Band ab 0:02' },
+          { feld: 'Abweichung', wert: 'Kabelweg außen herum statt durch den Hof', güte: 'gesagt', beleg: 'Band ab 0:09, Grund war eine Gasleitung' },
+          { feld: 'Leitungslänge', wert: '46 Meter', güte: 'gesagt', beleg: 'Band ab 0:41, gemessen' },
+          { feld: 'Mehraufwand', wert: 'gut sechs Stunden', güte: 'gesagt', beleg: 'Band ab 0:24' },
+          { feld: 'Freigabe vor Ort', wert: '', güte: 'fehlt', beleg: 'Band ab 0:30, niemand war erreichbar' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '08:12', was: 'Parkplatz vor dem Beginn' },
+          { nr: 2, zeit: '11:35', was: 'Graben außen herum, Gasleitung im Hof sichtbar' },
+          { nr: 3, zeit: '15:50', was: 'beide Wallboxen montiert' },
+          { nr: 4, zeit: '16:20', was: 'Verteiler in der Werkstatt, zwei Automaten' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Leitung NYM 5x6 verlegen', menge: 46, art: 'material', bestaetigung: null,
+            beleg: 'Band ab 0:41, gemessen. Im Angebot stand die Länge noch offen' },
+          { name: 'Monteurstunde', menge: 6, art: 'nachtrag', bestaetigung: 'fehlt',
+            zusatz: 'Mehraufwand für den geänderten Kabelweg',
+            beleg: 'Band ab 0:24 und Foto 2. Nachtrag N-121, niemand war erreichbar, es gibt keine Bestätigung' }
+        ]
+      },
+      {
+        id: 'B-4415', monteur: 'Timo Krey', datum: '12.08.2026',
+        kunde: 'S. Adam', auftraggeber: 'Hausverwaltung Ostpark', baustelle: 'Liegenschaft am Ostpark',
+        auftrag: 'Auftrag zu Angebot A-1040, Rechnung R-2026-0410',
+        aufnahme: 'Sprachnotiz 0:36 Minuten, 3 Fotos', frist: 'morgen', status: 'in Arbeit',
+        transkript: 'Rauchmelder sind durch, achtzehn Wohnungen, dreiundfünfzig Stück. Bei einer Wohnung war im Flur keiner montiert, da haben wir einen dazugesetzt. Vier Mieter waren beim ersten Termin nicht da, wir mussten dreimal extra kommen.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Rauchwarnmelder in 18 Wohnungen getauscht', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Stückzahl', wert: '53 getauscht und 1 zusätzlich gesetzt', güte: 'gesagt', beleg: 'Band ab 0:04 und 0:11' },
+          { feld: 'Anfahrten', wert: 'drei zusätzliche Termine', güte: 'gesagt', beleg: 'Band ab 0:21, vier Mieter nicht angetroffen' },
+          { feld: 'Zeit je Wohnung', wert: '', güte: 'fehlt', beleg: 'nicht erwähnt' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '09:05', was: 'alter Melder mit Baujahr, Wohnung 3' },
+          { nr: 2, zeit: '12:40', was: 'neuer Melder montiert, Wohnung 11' },
+          { nr: 3, zeit: '15:12', was: 'Flur ohne Melder, Wohnung 14, vor der Montage' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Anfahrt und Terminabstimmung', menge: 3, art: 'aufwand', bestaetigung: null,
+            zusatz: 'zusätzliche Termine',
+            beleg: 'Band ab 0:21, wörtlich „wir mussten dreimal extra kommen“, weil vier Mieter beim ersten Termin nicht da waren' }
+        ]
+      },
+      {
+        id: 'B-4414', monteur: 'Timo Krey', datum: '09.08.2026',
+        kunde: 'Jens Overath', auftraggeber: 'privat', baustelle: 'Einfamilienhaus',
+        auftrag: 'Auftrag zu Angebot A-1039, Rechnung R-2026-0409',
+        aufnahme: 'Sprachnotiz 0:29 Minuten, 4 Fotos', frist: 'erledigt', status: 'abgeschlossen',
+        freigegebenAnfang: true,
+        transkript: 'Zählerschrank ist getauscht, der Netzbetreiber war da und hat abgenommen. Protokoll habe ich abfotografiert. Drei Stunden für Anmeldung und Abnahme, den Rest hat der Kollege gemacht.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Zählerschrank getauscht', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Abnahme', wert: 'Netzbetreiber vor Ort, Protokoll liegt vor', güte: 'foto', beleg: 'Foto 4, Abnahmeprotokoll, 15:38 Uhr' },
+          { feld: 'Zeit für Anmeldung und Abnahme', wert: '3 Stunden', güte: 'gesagt', beleg: 'Band ab 0:16' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '08:02', was: 'alter Zählerschrank, Baujahr 1978' },
+          { nr: 2, zeit: '11:20', was: 'neuer Schrank gesetzt, offen' },
+          { nr: 3, zeit: '14:55', was: 'Schrank verschlossen und beschriftet' },
+          { nr: 4, zeit: '15:38', was: 'Abnahmeprotokoll des Netzbetreibers' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Monteurstunde', menge: 3, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:16, Anmeldung und Abnahme beim Netzbetreiber' }
+        ]
+      }
+    ]
+  },
+
+  shk: {
+    kurz: 'Sanitär und Heizung',
+    betrieb: 'Brandt Haustechnik',
+    zusatz: 'Sanitär, Heizung und Klima',
+    abends: '10 Minuten',
+    abendsnote: 'vorher jeden Abend anderthalb Stunden',
+    eigeneRegel: 'Bei einer Dichtheitsprüfung gehört der Messwert in den Bericht, nie das Wort dicht.',
+    preisliste: [
+      { name: 'Monteurstunde', preis: 72, einheit: 'je Stunde' },
+      { name: 'Abgasleitung erneuern', preis: 480, einheit: 'je Stück' },
+      { name: 'Altheizkörper entsorgen', preis: 34, einheit: 'je Stück' }
+    ],
+    berichte: [
+      {
+        id: 'B-1908', monteur: 'Kevin Marold', datum: '16.08.2026',
+        kunde: 'Bernd Kastner', auftraggeber: 'privat', baustelle: 'Reihenhaus, Heizungsraum',
+        auftrag: 'Auftrag zu Angebot S-2084, Rechnung R-2026-0288',
+        aufnahme: 'Sprachnotiz 0:55 Minuten, 5 Fotos', frist: 'heute', status: 'offen',
+        transkript: 'Therme ist raus, neue hängt und läuft. Die alte Abgasleitung war innen komplett versottet, die konnten wir nicht weiter verwenden. Habe das dem Kunden gezeigt, er hat den Nachtrag direkt unterschrieben. Dichtheitsprüfung gemacht, 0,2 Millibar Abfall in zehn Minuten. Sechs Stunden insgesamt.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Therme getauscht, neue läuft', güte: 'gesagt', beleg: 'Band ab 0:01, wörtlich „Therme ist raus, neue hängt und läuft“' },
+          { feld: 'Zusätzlich', wert: 'Abgasleitung erneuert, alte versottet', güte: 'gesagt', beleg: 'Band ab 0:09, dazu Foto 3' },
+          { feld: 'Bestätigung', wert: 'Nachtrag vor Ort unterschrieben', güte: 'foto', beleg: 'Foto 5, unterschriebener Nachtrag, 15:10 Uhr' },
+          { feld: 'Dichtheitsprüfung', wert: '0,2 Millibar Abfall in 10 Minuten', güte: 'gesagt', beleg: 'Band ab 0:35, Messwert genannt' },
+          { feld: 'Arbeitszeit', wert: '6 Stunden', güte: 'gesagt', beleg: 'Band ab 0:48' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '08:20', was: 'alte Gastherme, Baujahr 2004' },
+          { nr: 2, zeit: '10:05', was: 'Wand frei, Anschlüsse sichtbar' },
+          { nr: 3, zeit: '11:15', was: 'alte Abgasleitung innen, versottet' },
+          { nr: 4, zeit: '14:30', was: 'neue Therme montiert und angeschlossen' },
+          { nr: 5, zeit: '15:10', was: 'unterschriebener Nachtrag auf der Werkbank' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Monteurstunde', menge: 6, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:48, Abgasführung und Inbetriebnahme' },
+          { name: 'Abgasleitung erneuern', menge: 1, art: 'nachtrag', bestaetigung: 'liegt vor',
+            beleg: 'Nachtrag N-77, vom Kunden am 16.08.2026 unterschrieben, Foto 5' }
+        ]
+      },
+      {
+        id: 'B-1907', monteur: 'Kevin Marold', datum: '14.08.2026',
+        kunde: 'Petra Wendorff', auftraggeber: 'Hausverwaltung Rheinblick', baustelle: 'Rheinstraße, Treppenhäuser',
+        auftrag: 'Auftrag zu Angebot S-2086, Rechnung R-2026-0287',
+        aufnahme: 'Sprachnotiz 0:41 Minuten, 4 Fotos', frist: 'morgen', status: 'in Arbeit',
+        transkript: 'Sechs Heizkörper sind getauscht. Strang einmal komplett leer gemacht und wieder befüllt, das hat länger gedauert als gedacht, fünf Stunden. Die alten haben wir mitgenommen und beim Entsorger abgegeben, Wiegeschein liegt im Auto. Von der Verwaltung war keiner da.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'sechs Heizkörper getauscht', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Zusätzlich', wert: 'Strang entleert und wieder befüllt, fünf Stunden', güte: 'gesagt', beleg: 'Band ab 0:08' },
+          { feld: 'Entsorgung', wert: 'sechs Altheizkörper beim Entsorger abgegeben', güte: 'gesagt', beleg: 'Band ab 0:24, Wiegeschein vorhanden' },
+          { feld: 'Bestätigung', wert: '', güte: 'fehlt', beleg: 'Band ab 0:34, von der Verwaltung war niemand vor Ort' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:55', was: 'alter Heizkörper, Treppenhaus A, undicht' },
+          { nr: 2, zeit: '10:40', was: 'Strang entleert, Anschlüsse offen' },
+          { nr: 3, zeit: '14:15', was: 'neue Heizkörper montiert, Treppenhaus B' },
+          { nr: 4, zeit: '16:45', was: 'Wiegeschein des Entsorgers' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Monteurstunde', menge: 5, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:08, Strang entleeren und wieder befüllen' },
+          { name: 'Altheizkörper entsorgen', menge: 6, art: 'nachtrag', bestaetigung: 'fehlt',
+            zusatz: 'sechs Stück, Wiegeschein liegt vor',
+            beleg: 'Nachtrag N-79, Wiegeschein liegt vor, Foto 4. Eine Freigabe der Verwaltung fehlt' }
+        ]
+      },
+      {
+        id: 'B-1906', monteur: 'Dennis Rau', datum: '14.08.2026',
+        kunde: 'Ellen Ritter', auftraggeber: 'Bauunternehmung Ritter GmbH', baustelle: 'Neubau Feldkamp',
+        auftrag: 'Auftrag zum Rahmenauftrag, Rechnung R-2026-0286',
+        aufnahme: 'Sprachnotiz 1:04 Minuten, 5 Fotos', frist: 'übermorgen', status: 'offen',
+        transkript: 'Rohinstallation im ersten Abschnitt ist durch. Die Bauleitung hat den Grundriss in zwei Wohnungen geändert, dadurch mussten wir die Leitungsführung anpassen. Die Planänderung habe ich abfotografiert. Über drei Tage zusammen achtzehn Stunden extra.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Rohinstallation erster Bauabschnitt', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Abweichung', wert: 'Grundriss in zwei Wohnungen geändert', güte: 'foto', beleg: 'Foto 2 um 09:25 Uhr, die abfotografierte Planänderung der Bauleitung' },
+          { feld: 'Mehraufwand', wert: '18 Stunden über drei Tage', güte: 'gesagt', beleg: 'Band ab 0:47' },
+          { feld: 'Dichtheitsprüfung', wert: '', güte: 'fehlt', beleg: 'nicht erwähnt, gehört bei diesem Betrieb aber in den Bericht' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '08:10', was: 'Rohbau erster Abschnitt, Leitungen verlegt' },
+          { nr: 2, zeit: '09:25', was: 'Planänderung der Bauleitung, abfotografiert' },
+          { nr: 3, zeit: '13:50', was: 'angepasste Leitungsführung Wohnung 3' },
+          { nr: 4, zeit: '15:30', was: 'Fußbodenheizung verlegt, Wohnung 4' },
+          { nr: 5, zeit: '16:40', was: 'Sanitärobjekte gesetzt, Wohnung 1' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Monteurstunde', menge: 18, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:47, Anpassung an den geänderten Grundriss, Planänderung als Foto 2' }
+        ]
+      },
+      {
+        id: 'B-1905', monteur: 'Kevin Marold', datum: '05.08.2026',
+        kunde: 'K. Dettmer', auftraggeber: 'privat', baustelle: 'Bad im Obergeschoss',
+        auftrag: 'Auftrag zu Angebot S-2081, Rechnung R-2026-0285',
+        aufnahme: 'Sprachnotiz 0:52 Minuten, 6 Fotos', frist: 'erledigt', status: 'abgeschlossen',
+        freigegebenAnfang: true,
+        transkript: 'Bad ist fertig. Rohinstallation hat über die Tage zweiundzwanzig Stunden gedauert, hinter den Fliesen war noch alles in Blei, das mussten wir komplett raus nehmen. Objekte sind gesetzt, Dichtheitsprüfung 0,1 Millibar in zehn Minuten.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Bad komplett erneuert', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Arbeitszeit', wert: '22 Stunden über mehrere Tage', güte: 'gesagt', beleg: 'Band ab 0:07' },
+          { feld: 'Befund', wert: 'alte Bleileitungen hinter den Fliesen', güte: 'gesagt', beleg: 'Band ab 0:21, dazu Foto 2' },
+          { feld: 'Dichtheitsprüfung', wert: '0,1 Millibar Abfall in 10 Minuten', güte: 'gesagt', beleg: 'Band ab 0:44, Messwert genannt' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:40', was: 'altes Bad vor dem Ausbau' },
+          { nr: 2, zeit: '09:30', was: 'Bleileitungen hinter der Wand' },
+          { nr: 3, zeit: '12:10', was: 'neue Rohinstallation' },
+          { nr: 4, zeit: '14:05', was: 'Dichtheitsprüfung, Manometer im Bild' },
+          { nr: 5, zeit: '16:00', was: 'Objekte gesetzt' },
+          { nr: 6, zeit: '16:30', was: 'Bad fertig, Silikonfugen gezogen' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Monteurstunde', menge: 22, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:07, Rohinstallation über mehrere Tage' }
+        ]
+      }
+    ]
+  },
+
+  maler: {
+    kurz: 'Maler',
+    betrieb: 'Malerbetrieb Brandt',
+    zusatz: 'Maler und Lackierer',
+    abends: '5 Minuten',
+    abendsnote: 'vorher jeden Abend eine Dreiviertelstunde',
+    eigeneRegel: 'Untergrund und Vorbehandlung gehören in den Bericht, sonst gibt es bei Rissen später Streit.',
+    preisliste: [
+      { name: 'Malerstunde', preis: 58, einheit: 'je Stunde' },
+      { name: 'Malerstunde, Zuschlag Wochenende', preis: 78, einheit: 'je Stunde' },
+      { name: 'Putzschaden ausbessern', preis: 42, einheit: 'je Quadratmeter' }
+    ],
+    berichte: [
+      {
+        id: 'B-0912', monteur: 'Marek Sowa', datum: '17.08.2026',
+        kunde: 'Bianca Groß', auftraggeber: 'privat', baustelle: 'Dreizimmerwohnung',
+        auftrag: 'Auftrag zu Angebot M-0731, Rechnung R-2026-0155',
+        aufnahme: 'Sprachnotiz 0:47 Minuten, 5 Fotos', frist: 'heute', status: 'offen',
+        transkript: 'Wohnung ist fertig gestrichen. Nach dem Tapetenabnehmen war der Putz in beiden Zimmern ziemlich rau, da mussten wir spachteln und schleifen, sieben Stunden extra. Untergrund vorher mit Tiefgrund behandelt. Decken und Wände zweimal.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Wohnung fertig gestrichen', güte: 'gesagt', beleg: 'Band ab 0:01, wörtlich „Wohnung ist fertig gestrichen“' },
+          { feld: 'Zusätzlich', wert: 'spachteln und schleifen nach dem Tapetenabnehmen, sieben Stunden', güte: 'gesagt', beleg: 'Band ab 0:12' },
+          { feld: 'Untergrund', wert: 'mit Tiefgrund vorbehandelt', güte: 'gesagt', beleg: 'Band ab 0:34' },
+          { feld: 'Farbton', wert: '', güte: 'fehlt', beleg: 'nicht erwähnt, für die Nachbestellung wichtig' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:50', was: 'Zimmer 1 mit alter Tapete' },
+          { nr: 2, zeit: '09:35', was: 'Putz nach dem Tapetenabnehmen, rau' },
+          { nr: 3, zeit: '12:20', was: 'gespachtelte Flächen' },
+          { nr: 4, zeit: '15:10', was: 'Zimmer 1 fertig gestrichen' },
+          { nr: 5, zeit: '16:15', was: 'Flur und Küche fertig' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Malerstunde', menge: 7, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:12, Ausbesserungen nach dem Entfernen der Tapete. Im Angebot stand diese Position ohne Preis' }
+        ]
+      },
+      {
+        id: 'B-0911', monteur: 'Marek Sowa', datum: '16.08.2026',
+        kunde: 'Anke Rehberg', auftraggeber: 'Praxis am Marktplatz', baustelle: 'Wartezimmer und Flur',
+        auftrag: 'Auftrag zu Angebot M-0730, Rechnung R-2026-0154',
+        aufnahme: 'Sprachnotiz 0:33 Minuten, 3 Fotos', frist: 'morgen', status: 'in Arbeit',
+        transkript: 'Samstag gearbeitet, wie abgesprochen. Wartezimmer und Flur sind durch, vier Stunden. Die Möbel hat die Praxis selbst geräumt. Untergrund war in Ordnung, nur ein paar Dübellöcher.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Wartezimmer und Flur gestrichen', güte: 'gesagt', beleg: 'Band ab 0:05' },
+          { feld: 'Zeitfenster', wert: 'Samstag, wie abgesprochen', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Arbeitszeit', wert: '4 Stunden', güte: 'gesagt', beleg: 'Band ab 0:11' },
+          { feld: 'Untergrund', wert: 'in Ordnung, einzelne Dübellöcher', güte: 'gesagt', beleg: 'Band ab 0:24' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '08:05', was: 'Wartezimmer leergeräumt' },
+          { nr: 2, zeit: '10:20', was: 'Dübellöcher gespachtelt' },
+          { nr: 3, zeit: '12:40', was: 'Wartezimmer und Flur fertig' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Malerstunde, Zuschlag Wochenende', menge: 4, art: 'stunden', bestaetigung: null,
+            beleg: 'Band ab 0:11, Samstag, Zuschlag laut Preisliste' }
+        ]
+      },
+      {
+        id: 'B-0910', monteur: 'Marek Sowa', datum: '15.08.2026',
+        kunde: 'T. Barkhausen', auftraggeber: 'Hausverwaltung Lindenhof', baustelle: 'Mehrfamilienhaus Lindenstraße',
+        auftrag: 'Auftrag zu Angebot M-0729, Rechnung R-2026-0153',
+        aufnahme: 'Sprachnotiz 0:58 Minuten, 6 Fotos', frist: 'heute', status: 'offen',
+        transkript: 'Fassade ist gestrichen, Gerüst steht seit dem sechsten. An der Wetterseite ist der Putz an mehreren Stellen hohl, das haben wir aufgemacht und fotografiert, etwa sechsunddreißig Quadratmeter. Ausgebessert haben wir noch nicht, dafür brauchen wir erst eine Ansage von der Verwaltung. Angerufen habe ich zweimal.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Fassade gestrichen', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Befund', wert: 'Putz an der Wetterseite hohl, etwa 36 Quadratmeter', güte: 'gesagt', beleg: 'Band ab 0:14, dazu Foto 3 und 4' },
+          { feld: 'Ausbesserung', wert: 'noch nicht ausgeführt', güte: 'gesagt', beleg: 'Band ab 0:38' },
+          { feld: 'Bestätigung', wert: '', güte: 'fehlt', beleg: 'Band ab 0:46, zweimal angerufen, niemand erreicht' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:30', was: 'Fassade vor dem Anstrich, Gerüst steht' },
+          { nr: 2, zeit: '11:00', was: 'erste Fläche gestrichen' },
+          { nr: 3, zeit: '13:15', was: 'Wetterseite, hohler Putz aufgeklopft' },
+          { nr: 4, zeit: '13:22', was: 'Detail mit Zollstock, Schadensfläche' },
+          { nr: 5, zeit: '16:05', was: 'Fassade fertig gestrichen' },
+          { nr: 6, zeit: '16:30', was: 'Gerüst, Lieferschein am Aufzug' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: [
+          { name: 'Putzschaden ausbessern', menge: 36, art: 'nachtrag', bestaetigung: 'fehlt',
+            zusatz: 'Wetterseite, noch nicht ausgeführt',
+            beleg: 'Nachtrag N-44, Fotos 3 und 4 mit Zollstock. Die Verwaltung wurde zweimal angerufen, es gibt keine Freigabe' }
+        ]
+      },
+      {
+        id: 'B-0909', monteur: 'Marek Sowa', datum: '10.08.2026',
+        kunde: 'Sylvia Brenner', auftraggeber: 'Wohnungsgenossenschaft Nordstern', baustelle: 'Nordstraße 12, Treppenhaus',
+        auftrag: 'Auftrag zu Angebot M-0728, Rechnung R-2026-0152',
+        aufnahme: 'Sprachnotiz 0:31 Minuten, 4 Fotos', frist: 'erledigt', status: 'abgeschlossen',
+        freigegebenAnfang: true,
+        transkript: 'Treppenhaus über fünf Etagen ist fertig. Untergrund war alte Dispersion, hat gut gehalten, einmal angeschliffen. Keine Besonderheiten.',
+        erkannt: [
+          { feld: 'Gemacht', wert: 'Treppenhaus über fünf Etagen gestrichen', güte: 'gesagt', beleg: 'Band ab 0:01' },
+          { feld: 'Untergrund', wert: 'alte Dispersion, angeschliffen', güte: 'gesagt', beleg: 'Band ab 0:09' },
+          { feld: 'Besonderheiten', wert: 'keine', güte: 'gesagt', beleg: 'Band ab 0:26' }
+        ],
+        fotos: [
+          { nr: 1, zeit: '07:45', was: 'Treppenhaus Erdgeschoss vorher' },
+          { nr: 2, zeit: '11:30', was: 'Etage 2, Wände gestrichen' },
+          { nr: 3, zeit: '14:50', was: 'Etage 5 fertig' },
+          { nr: 4, zeit: '15:20', was: 'Treppenhaus gereinigt' }
+        ],
+        zeitpruefung: null,
+        abrechenbar: []
+      }
+    ]
+  }
+};
+
+const GEWERK_LISTE = ['elektro', 'shk', 'maler'];
+const SCHRITTE = ['aufnahme', 'bericht', 'buero', 'freigabe'];
+
+/* ---------------------------------------------------- Werkseinstellung */
+/* Was der Betrieb dem Assistenten beigebracht hat. Der STANDARD wird aus
+   den Stammdaten des Gewerks gezogen und nie angefasst. Er ist der
+   Vergleichspunkt fuer „geaendert" und fuer das Zuruecksetzen. */
+const tiefeKopie = x => JSON.parse(JSON.stringify(x));
+
+function werkseinstellung(gk) {
+  const w = GEWERKE[gk];
+  return {
+    preise: Object.fromEntries(w.preisliste.map(p => [p.name, p.preis])),
+    /* Eine abgeschaltete Position gibt der Assistent nicht ans Buero
+       weiter. Sie verschwindet nicht, sondern steht sichtbar da. */
+    aktiv: Object.fromEntries(w.preisliste.map(p => [p.name, true])),
+    eigeneRegeln: [w.eigeneRegel],
+    /* Standardmaessig AN, trifft je Betrieb genau einen offenen Bericht. */
+    nachtragRegel: { an: true },
+    /* Standardmaessig AUS. Fast jeder Bericht hat eine offene Angabe,
+       eingeschaltet waere sonst beim ersten Blick alles angehalten und der
+       Prototyp saehe kaputt aus statt streng. */
+    luckenRegel: { an: false },
+    preisRegel: { an: true },
+    schlusssatz: 'Bitte kurz prüfen. Wenn etwas fehlt, ruf einfach an.'
+  };
+}
+
+const zustand = {
+  gewerk: 'elektro',
+  seite: 'uebersicht',
+  offen: null,
+  schritt: 'aufnahme',
+  freigegeben: {},
+  notizen: {},
+  /* Die Einstellungen liegen JE GEWERK, nicht global. Ein Betrieb ist ein
+     Betrieb, und ein hier geaenderter Preis darf beim Umschalten nicht im
+     fremden Haus auftauchen. */
+  ein: Object.fromEntries(GEWERK_LISTE.map(gk => [gk, werkseinstellung(gk)])),
+  /* Auch der halb getippte Regelentwurf gehoert dem Betrieb. */
+  entwurfRegel: Object.fromEntries(GEWERK_LISTE.map(gk => [gk, '']))
+};
+
+const g = () => GEWERKE[zustand.gewerk];
+const ein = () => zustand.ein[zustand.gewerk];
+const eur = n => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR',
+  minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const zahl = n => n.toLocaleString('de-DE');
+const berichte = () => g().berichte;
+const bericht = id => berichte().find(b => b.id === id) || berichte()[0];
+const stammPreis = name => (g().preisliste.find(p => p.name === name) || {}).preis;
+/* Der eingestellte Preis gilt, der Stammpreis ist nur der Rueckfall. */
+const preisVon = name => {
+  if (stammPreis(name) === undefined) return undefined;
+  const p = ein().preise[name];
+  return p === undefined ? stammPreis(name) : p;
+};
+const posAktiv = name => ein().aktiv[name] !== false;
+const cent = n => Math.round(n * 100) / 100;
+
+/* Ein Nachtrag geht nur dann als abrechenbar ins Buero, wenn der Kunde
+   ihn bestaetigt hat. Alles andere wandert als offener Punkt weiter und
+   bleibt im Rechnungs-Assistenten von der Rechnung fern. */
+const gehtDurch = p => p.art !== 'nachtrag' || p.bestaetigung === 'liegt vor';
+/* Getrennt davon die zweite Frage, traegt die Position ueberhaupt einen
+   Preis. Sie hat einen anderen Grund und braucht deshalb einen eigenen
+   Satz, sonst liest der Betrieb „wartet auf den Kunden", waehrend er
+   selbst die Position abgeschaltet hat. */
+const preisOk = p => preisVon(p.name) !== undefined && posAktiv(p.name);
+const ABGESCHALTET = 'vom Betrieb abgeschaltet, geht nicht ins Büro';
+const preisGrund = p => preisVon(p.name) === undefined
+  ? 'kein Preis in der Preisliste hinterlegt' : ABGESCHALTET;
+const freigegebenePosten = b => b.abrechenbar.filter(p => gehtDurch(p) && preisOk(p));
+const offenePosten = b => b.abrechenbar.filter(p => !gehtDurch(p));
+const ohnePreis = b => b.abrechenbar.filter(p => gehtDurch(p) && !preisOk(p));
+const wert = liste => cent(liste.reduce((s, p) => s + p.menge * (preisVon(p.name) || 0), 0));
+const luecken = b => b.erkannt.filter(e => e.güte === 'fehlt');
+const stunden = b => freigegebenePosten(b)
+  .filter(p => p.name.indexOf('stunde') !== -1)
+  .reduce((s, p) => s + p.menge, 0);
+const istFreigegeben = b => !!zustand.freigegeben[zustand.gewerk + b.id];
+const offeneBerichte = () => berichte().filter(b => !istFreigegeben(b));
+const regeln = () => GEMEINSAME_REGELN.concat(ein().eigeneRegeln);
+
+/* ------------------------------------------------------------- Regeln */
+/* Was die eingeschalteten Regeln an DIESEM Bericht bewirken. Eine Sperre
+   haelt die Freigabe an, ein Hinweis steht nur daneben. */
+function haltBefunde(b) {
+  const raus = [];
+  const r = ein();
+  if (r.nachtragRegel.an && offenePosten(b).length) {
+    raus.push({ art: 'sperre', schluessel: 'nachtrag',
+      text: offenePosten(b).length === 1
+        ? 'Ein Nachtrag wartet noch auf die Bestätigung des Kunden, deshalb ist der Bericht angehalten.'
+        : offenePosten(b).length + ' Nachträge warten noch auf die Bestätigung des Kunden, deshalb ist der Bericht angehalten.' });
+  }
+  if (r.luckenRegel.an && luecken(b).length) {
+    raus.push({ art: 'sperre', schluessel: 'luecken',
+      text: luecken(b).length === 1
+        ? 'Eine Angabe fehlt im Bericht, deshalb ist er angehalten.'
+        : luecken(b).length + ' Angaben fehlen im Bericht, deshalb ist er angehalten.' });
+  }
+  if (r.preisRegel.an && ohnePreis(b).length) {
+    raus.push({ art: 'sperre', schluessel: 'preis',
+      text: ohnePreis(b).length === 1
+        ? 'Eine Position trägt keinen Preis, deshalb ist der Bericht angehalten.'
+        : ohnePreis(b).length + ' Positionen tragen keinen Preis, deshalb ist der Bericht angehalten.' });
+  }
+  return raus;
+}
+const angehalten = b => haltBefunde(b).some(x => x.art === 'sperre');
+const freigabeMoeglich = b => !angehalten(b);
+
+/* Denselben Wert einmal mit der Werkseinstellung rechnen, ohne den
+   laufenden Zustand zu verlieren. */
+function mitStandard(fn) {
+  const merk = zustand.ein[zustand.gewerk];
+  zustand.ein[zustand.gewerk] = werkseinstellung(zustand.gewerk);
+  try { return fn(); } finally { zustand.ein[zustand.gewerk] = merk; }
+}
+
+/* Geaendert wird JE GEWERK gemeldet. */
+const geaendert = () =>
+  JSON.stringify(zustand.ein[zustand.gewerk]) !== JSON.stringify(werkseinstellung(zustand.gewerk))
+  || !!zustand.entwurfRegel[zustand.gewerk].trim();
+
+/* Eine Zahl aus einem Zahlenfeld, oder null. Das deutsche Komma wird
+   angenommen, sonst macht die Eingabe „14,90" aus dem Preis eine 14. */
+function preisOderNull(wert) {
+  const roh = String(wert).trim().replace(',', '.');
+  if (!roh) return null;
+  const z = Number(roh);
+  if (!isFinite(z) || z < 0) return null;
+  return cent(z);
+}
+
+for (const gk of GEWERK_LISTE) {
+  for (const b of GEWERKE[gk].berichte) {
+    if (b.freigegebenAnfang) zustand.freigegeben[gk + b.id] = true;
+  }
+}
+
+function el(tag, attrs, ...kinder) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'klasse') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v);
+  }
+  /* `flat(Infinity)`, nicht `flat()`. Eine Karte, die eine Liste UND
+     darunter ein `map()` liefert, erzeugt sonst ein Array im Array, und
+     `appendChild` bekommt kein Element. Die Ansicht bleibt komplett leer,
+     ohne sichtbare Fehlermeldung. */
+  for (const k of kinder.flat(Infinity)) {
+    if (k === null || k === undefined || k === false) continue;
+    e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k);
+  }
+  return e;
+}
+
+/* Ein einzeiliges Feld bricht nie um. Steht dort ein langer Freitext, sieht
+   der Nutzer auf einem schmalen Geraet nur einen Ausschnitt und muss im Feld
+   wischen. Gemessen wurden 493 Pixel Inhalt in einem 318 Pixel breiten Feld bei 390
+   Pixel Bildschirmbreite. Ab einer
+   Laenge, die dort nicht mehr passt, wird deshalb ein mehrzeiliges Feld
+   erzeugt. Es sieht gleich aus und traegt denselben Wert, `.value` liest ihn
+   unveraendert, am Verhalten aendert sich also nichts. */
+const WERT_LANG = 38;
+
+/* Ein mehrzeiliges Feld nimmt einen Zeilenumbruch an, ein einzeiliges wirft
+   ihn nach HTML-Spezifikation still weg. Die Umstellung auf `textarea` hat
+   damit eine Moeglichkeit GESCHAFFEN, die es vorher nicht gab, ein Enter im
+   Feld landete roh im Kundenanschreiben und brach dort mitten im Satz um.
+   
+   Eine Behebung ist selbst eine Aenderung und braucht ihre eigene Messung. */
+function einzeilig(s) {
+  /* Macht aus einer Nutzereingabe eine einzige Textzeile.
+
+     Vier Anlaeufe waren noetig. Erst `\r\n`, dann der Tabulator aus Word- und Excel-Kopien,
+     zuletzt die Unicode-Zeichen oberhalb ASCII. Am teuersten war nicht
+     die Luecke selbst, sondern dass hier „ALLE Steuerzeichen" stand,
+     waehrend die Regex nur den ASCII-Bereich traf. Eine Zusage im
+     Kommentar, die der Code nicht haelt, ist schlimmer als gar keine,
+     weil der naechste Leser sich darauf verlaesst.
+
+     Abgedeckt sind jetzt, und mehr ausdruecklich nicht:
+       - ASCII-Steuerzeichen `\x00-\x1F` und `\x7F`
+       - geschuetztes und schmales Leerzeichen, U+00A0 und U+202F,
+         sie kommen praktisch bei jeder Word-Kopie mit
+       - Zeilen- und Absatztrenner U+2028 und U+2029
+       - Nullbreiten- und Formatzeichen U+200B bis U+200D, U+2060, U+FEFF
+       - die uebrigen Unicode-Leerzeichen U+1680, U+2000-U+200A, U+205F, U+3000
+     NICHT abgedeckt sind Bidi-Steuerzeichen wie U+202A bis U+202E. Sie
+     wuerden die Leserichtung drehen, sind aber in einem deutschen
+     Angebotstext kein realistischer Eingabefall. Das ist eine benannte
+     Grenze, keine Nachlaessigkeit.
+
+     Zum Schluss wird mehrfacher Leerraum zusammengezogen, sonst bleibt
+     an der Stelle des entfernten Zeichens eine Luecke im Satz stehen. */
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/[\x00-\x1F\x7F\u00A0\u1680\u2000-\u200D\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]+/g, ' ')
+    .replace(/ {2,}/g, ' ');
+}
+
+function wertFeld(attrs, wert) {
+  const w = einzeilig(wert);
+  if (w.length > WERT_LANG) {
+    /* Der Umbruch wird schon beim Tippen und beim Einfuegen entfernt, damit
+       der Nutzer gar nicht erst glaubt, er koenne hier Absaetze setzen. Die
+       Schreibstelle im `onchange` des Aufrufers ist zusaetzlich abgesichert,
+       weil ein direkt gesetzter Wert kein `input`-Ereignis ausloest. */
+    const putzen = ev => {
+      if (!/[\r\n]/.test(ev.target.value)) return;
+      const pos = ev.target.selectionStart;
+      ev.target.value = einzeilig(ev.target.value);
+      if (ev.target.setSelectionRange) ev.target.setSelectionRange(pos, pos);
+    };
+    return el('textarea',
+      Object.assign({ klasse: 'eng', rows: '2', oninput: putzen }, attrs), w);
+  }
+  return el('input', Object.assign({ type: 'text', value: w }, attrs));
+}
+
+
+/* Neu zeichnen und den Schreibfokus zurueckholen.
+   Eine Einstellung wirkt sofort, dafuer wird der ganze Bildschirm neu
+   gebaut, und dabei geht das Feld verloren, in dem gerade getippt wurde.
+   Die Felder loesen deshalb bei `change` aus und nicht bei jedem
+   Tastendruck, sonst waere der Fokus schon nach der ersten Ziffer weg. */
+function zeichneMitFokus(id) {
+  zeichne();
+  const w = document.getElementById(id);
+  if (!w) return;
+  w.focus();
+  /* `setSelectionRange` wirft bei einem Zahlenfeld, deshalb nur bei Text. */
+  if (w.tagName === 'TEXTAREA' || (w.tagName === 'INPUT' && w.type === 'text')) {
+    w.setSelectionRange(w.value.length, w.value.length);
+  }
+}
+
+/* Die Marke „geändert" und den Zurücksetzen-Knopf nachziehen, OHNE neu zu
+   zeichnen. Wird beim Tippen im Regelfeld gerufen, wo ein volles
+   Neuzeichnen den Schreibfokus kosten wuerde. */
+function standAktualisieren() {
+  const pille = document.getElementById('stand-pille');
+  const knopf = document.getElementById('knopf-zuruecksetzen');
+  const gea = geaendert();
+  if (pille) {
+    pille.textContent = gea ? 'geändert' : 'Standard';
+    pille.className = 'pille ' + (gea ? 'p-signal' : 'p-grau');
+  }
+  if (knopf) knopf.disabled = !gea;
+}
+
+function hashSchreiben() {
+  const teile = [zustand.gewerk, zustand.seite];
+  if (zustand.seite === 'bericht' && zustand.offen) teile.push(zustand.offen, zustand.schritt);
+  const neu = '#' + teile.join('/');
+  if (location.hash !== neu) history.replaceState(null, '', neu);
+}
+
+function hashLesen() {
+  const teile = decodeURIComponent(location.hash.replace(/^#/, '')).split('/').filter(Boolean);
+  if (teile.length && GEWERKE[teile[0]]) zustand.gewerk = teile[0];
+  const seiten = ['uebersicht', 'berichte', 'bericht', 'buero', 'anlernen'];
+  if (teile.length > 1 && seiten.includes(teile[1])) zustand.seite = teile[1];
+  if (teile.length > 2) zustand.offen = teile[2];
+  if (teile.length > 3 && SCHRITTE.includes(teile[3])) zustand.schritt = teile[3];
+  if (zustand.seite === 'bericht') {
+    const treffer = berichte().find(b => b.id === zustand.offen);
+    if (!treffer) { zustand.seite = 'uebersicht'; zustand.offen = null; }
+  }
+}
+
+function gehe(seite, id) {
+  zustand.seite = seite;
+  if (id) zustand.offen = id;
+  if (seite === 'bericht') zustand.schritt = 'aufnahme';
+  zeichne();
+  const bahn = document.querySelector('.bahn');
+  if (bahn) bahn.scrollTop = 0;
+}
+
+function gewerkWechseln(schluessel) {
+  zustand.gewerk = schluessel;
+  zustand.seite = 'uebersicht';
+  zustand.offen = null;
+  zustand.schritt = 'aufnahme';
+  zeichne();
+}
+
+function navigation() {
+  const punkte = [
+    ['uebersicht', '◫', 'Übersicht', ''],
+    ['berichte', '✎', 'Berichte', String(offeneBerichte().length)],
+    ['buero', '◰', 'Fürs Büro', ''],
+    ['anlernen', '⚙', 'Assistent anlernen', '']
+  ];
+  const liste = punkte.map(function (eintrag) {
+    const id = eintrag[0];
+    const aktiv = zustand.seite === id || (id === 'berichte' && zustand.seite === 'bericht');
+    return el('li', {},
+      el('button', { klasse: 'nav-punkt', 'aria-current': aktiv ? 'page' : null,
+        onclick: () => gehe(id) },
+        el('span', { klasse: 'nav-icon', 'aria-hidden': 'true', text: eintrag[1] }),
+        el('span', { text: eintrag[2] }),
+        eintrag[3] ? el('span', { klasse: 'nav-zahl', text: eintrag[3] }) : null));
+  });
+  const marke = el('div', { klasse: 'marke' },
+    el('div', { klasse: 'monogramm', 'aria-hidden': 'true', text: 'B' }),
+    el('div', { klasse: 'marke-text' },
+      el('span', { klasse: 'marke-name', text: g().betrieb }),
+      el('span', { klasse: 'marke-sub', text: 'KI-Büro für Handwerksbetriebe' })));
+  const fuss = el('div', { klasse: 'nav-fuss' },
+    el('div', { klasse: 'nav-hinweis' },
+      el('b', { text: 'Nichts geht ohne dich raus. ' }),
+      'Der Assistent schreibt den Bericht, freigegeben wird von Hand.'),
+    el('div', { klasse: 'nutzer' },
+      el('div', { klasse: 'nutzer-kreis', 'aria-hidden': 'true', text: CHEF.kuerzel }),
+      el('div', {},
+        el('div', { klasse: 'nutzer-name', text: CHEF.name }),
+        el('div', { klasse: 'nutzer-rolle', text: CHEF.rolle }))));
+  return el('nav', { klasse: 'nav', 'aria-label': 'Hauptnavigation' },
+    marke, el('ul', { klasse: 'nav-liste' }, liste), fuss);
+}
+
+function gewerkeSchalter() {
+  const knoepfe = GEWERK_LISTE.map(s => el('button', {
+    klasse: 'schalter-knopf',
+    'aria-pressed': zustand.gewerk === s ? 'true' : 'false',
+    onclick: () => gewerkWechseln(s)
+  }, GEWERKE[s].kurz));
+  return el('div', { klasse: 'schalter', role: 'group', 'aria-label': 'Gewerk wechseln' }, knoepfe);
+}
+
+function kopf(kicker, titel, rechts) {
+  return el('header', { klasse: 'kopf' },
+    el('div', { klasse: 'kopf-text' },
+      el('p', { klasse: 'kopf-kicker', text: kicker }),
+      el('h1', { klasse: 'kopf-titel', text: titel })),
+    rechts || null,
+    gewerkeSchalter());
+}
+
+function gütePille(güte) {
+  const gruen = ['gesagt', 'foto', 'gerät'];
+  const klasse = gruen.includes(güte) ? 'p-signal' : 'p-rot';
+  return el('span', { klasse: 'pille ' + klasse, text: güte });
+}
+
+const postenName = p => p.name + (p.zusatz ? ', ' + p.zusatz : '');
+
+function bestaetigungPille(p) {
+  if (p.art !== 'nachtrag') return el('span', { klasse: 'pille p-gruen', text: p.art });
+  if (p.bestaetigung === 'liegt vor') return el('span', { klasse: 'pille p-gruen', text: 'Nachtrag, bestätigt' });
+  if (p.bestaetigung === 'angefordert') return el('span', { klasse: 'pille p-gold', text: 'Nachtrag, angefordert' });
+  return el('span', { klasse: 'pille p-rot', text: 'Nachtrag, ohne Bestätigung' });
+}
+
+function kennzahl(label, w, note, art) {
+  return el('section', { klasse: 'kennzahl' },
+    el('h2', { klasse: 'kennzahl-label', text: label }),
+    el('p', { klasse: 'kennzahl-wert', text: w }),
+    el('p', { klasse: 'kennzahl-note ' + (art || ''), text: note }));
+}
+
+function karte(titel, pillen, leib) {
+  const kopfzeile = [el('h2', { klasse: 'karte-titel', text: titel })].concat(pillen || []);
+  return el('section', { klasse: 'karte' },
+    el('div', { klasse: 'karte-kopf' }, kopfzeile), leib);
+}
+
+/* -------------------------------------------------------- Übersicht */
+function seiteUebersicht() {
+  const offen = offeneBerichte();
+  const heute = offen.filter(b => b.frist === 'heute').length;
+  const fuersBuero = offen.reduce((s, b) => s + wert(freigegebenePosten(b)), 0);
+  /* ALLE Berichte, nicht nur die noch offenen. Ein Nachtrag ohne
+     Bestaetigung verschwindet nicht dadurch, dass der Bericht freigegeben
+     wird. Derselbe Fehler laesst die Uebersicht behaupten, alles sei bestaetigt. */
+  const wartendeBerichte = berichte().filter(b => offenePosten(b).length);
+  const wartend = wartendeBerichte.reduce((s, b) => s + wert(offenePosten(b)), 0);
+  const stundenSumme = offen.reduce((s, b) => s + stunden(b), 0);
+
+  const zeilen = offen.map(b => el('button', {
+    klasse: 'liste-zeile', onclick: () => gehe('bericht', b.id) },
+    el('span', { klasse: 'kanal', 'aria-hidden': 'true', text: '✎' }),
+    el('span', { klasse: 'liste-haupt' },
+      el('span', { klasse: 'liste-titel', text: b.kunde + ', ' + b.auftraggeber }),
+      el('span', { klasse: 'liste-sub', text: b.monteur + ', ' + b.datum + ', ' + b.aufnahme })),
+    el('span', { klasse: 'liste-rechts' },
+      el('span', { klasse: 'zahl', text: eur(wert(freigegebenePosten(b))) }),
+      el('span', { klasse: 'pille ' + (b.frist === 'heute' ? 'p-rot' : 'p-grau'),
+        text: 'fällig ' + b.frist }))));
+
+  const wartendKasten = wartendeBerichte.length
+    ? wartendeBerichte.map(b => el('div', { klasse: 'kasten rot' },
+        el('p', { klasse: 'kasten-titel',
+          text: b.kunde + (istFreigegeben(b) ? ', Bericht ist schon raus' : '') }),
+        el('p', { klasse: 'kasten-text',
+          text: offenePosten(b).map(postenName).join(', ') + ', zusammen ' + eur(wert(offenePosten(b))) +
+                (istFreigegeben(b)
+                  ? '. Der Bericht ist freigegeben, die Bestätigung fehlt trotzdem noch.'
+                  : '') })))
+    : el('div', { klasse: 'kasten gruen' },
+        el('p', { klasse: 'kasten-titel', text: 'Nichts wartet' }),
+        el('p', { klasse: 'kasten-text', text: 'Alle Nachträge sind bestätigt.' }));
+
+  const ablauf = ['Der Monteur spricht auf der Baustelle eine Notiz aufs Telefon und macht Fotos',
+    'Der Assistent schreibt daraus den Bericht, jede Zeile mit ihrer Herkunft',
+    'Was fehlt, lässt er offen und schreibt es hin, statt es zu ergänzen',
+    'Er markiert, was abrechenbar ist, und was erst eine Bestätigung braucht',
+    'Du gibst frei, der Bericht geht zum Kunden und die Zahlen ins Büro'
+  ].map((t, i) => el('li', { klasse: 'beleg' },
+    el('span', { klasse: 'pille p-signal', text: String(i + 1) }),
+    el('span', { text: t })));
+
+  return [
+    kopf(g().betrieb + ', ' + g().zusatz, 'Übersicht',
+      el('button', { klasse: 'knopf k-signal', onclick: () => gehe('berichte') },
+        'Berichte durchgehen')),
+    el('div', { klasse: 'bahn' },
+      el('div', { klasse: 'stapel' },
+        el('div', { klasse: 'gitter g4' },
+          kennzahl('Berichte aus dem Feld', String(offen.length),
+            heute === 1 ? 'einer davon heute fällig' : heute + ' davon heute fällig', heute ? 'warn' : ''),
+          kennzahl('Stunden abrechenbar', zahl(stundenSumme) + ' h', 'belegt und nicht schon im Einheitspreis enthalten', ''),
+          kennzahl('Geht direkt ins Büro', eur(fuersBuero), 'abrechenbar, ohne offene Nachträge', 'gut'),
+          kennzahl('Wartet auf Bestätigung', eur(wartend), 'belegt, aber vom Kunden nicht freigegeben',
+            wartend ? 'warn' : '')),
+        el('div', { klasse: 'gitter g-haupt' },
+          karte('Heute durchzusehen',
+            [el('span', { klasse: 'pille p-signal', text: offen.length + ' offen' })],
+            el('div', {}, zeilen)),
+          el('div', { klasse: 'stapel' },
+            karte('Was auf eine Bestätigung wartet',
+              [el('span', { klasse: 'pille p-rot', text: eur(wartend) })],
+              el('div', { klasse: 'karte-leib stapel' },
+                el('p', { klasse: 'kasten-text',
+                  text: 'Diese Punkte sind belegt, aber der Kunde hat sie nicht bestätigt. Sie gehen als offen ins Büro und bleiben von der Rechnung fern, bis die Bestätigung da ist.' }),
+                wartendKasten)),
+            karte('So arbeitet der Assistent', null,
+              el('div', { klasse: 'karte-leib' },
+                el('ol', { klasse: 'stapel', style: 'gap:9px' }, ablauf)))))))
+  ];
+}
+
+/* --------------------------------------------------------- Berichte */
+function seiteBerichte() {
+  const zeilen = berichte().map(b => el('tr', {
+    klasse: 'klickbar', onclick: () => gehe('bericht', b.id) },
+    el('td', { klasse: 'zahl' }, b.id, el('br'),
+      el('span', { klasse: 'liste-sub', text: b.datum })),
+    el('td', {}, el('strong', { text: b.kunde }), el('br'),
+      el('span', { klasse: 'liste-sub', text: b.baustelle })),
+    el('td', {}, b.monteur, el('br'),
+      el('span', { klasse: 'liste-sub', text: b.aufnahme })),
+    el('td', {}, el('span', { klasse: 'zahl', text: eur(wert(freigegebenePosten(b))) }), el('br'),
+      el('span', { klasse: 'liste-sub',
+        text: offenePosten(b).length ? offenePosten(b).length + ' wartet auf Bestätigung' : 'nichts offen' })),
+    el('td', {}, el('span', {
+      klasse: 'pille ' + (istFreigegeben(b) ? 'p-gruen' : b.frist === 'heute' ? 'p-rot' : 'p-gold'),
+      text: istFreigegeben(b) ? 'freigegeben' : b.status }))));
+
+  const tabelle = el('div', { klasse: 'tabelle-rahmen' },
+    el('table', { 'aria-label': 'Liste aller Arbeitsberichte mit Kunde, Monteur, Wert und Stand' },
+      el('thead', {}, el('tr', {},
+        ['Nummer', 'Kunde', 'Monteur', 'Fürs Büro', 'Stand'].map(t =>
+          el('th', { scope: 'col', text: t })))),
+      el('tbody', {}, zeilen)));
+
+  return [
+    kopf('Alles, was von der Baustelle reingekommen ist', 'Berichte'),
+    el('div', { klasse: 'bahn' },
+      karte(berichte().length + ' Berichte',
+        [el('span', { klasse: 'pille p-grau', text: 'Beispieldaten' })], tabelle))
+  ];
+}
+
+/* ------------------------------------------------- Bericht bearbeiten */
+function seiteBericht() {
+  const b = bericht(zustand.offen);
+  zustand.offen = b.id;
+  const schritte = [['aufnahme', 'Aufnahme'], ['bericht', 'Bericht'],
+                    ['buero', 'Fürs Büro'], ['freigabe', 'Freigabe']];
+  const idx = schritte.findIndex(s => s[0] === zustand.schritt);
+  const teile = { aufnahme: schrittAufnahme, bericht: schrittBericht,
+                  buero: schrittBuero, freigabe: schrittFreigabe };
+  const leiste = schritte.map(([id, label], i) => el('button', {
+    klasse: 'schritt ' + (i === idx ? 'aktiv' : i < idx ? 'fertig' : ''),
+    onclick: () => { zustand.schritt = id; zeichne(); }
+  }, (i < idx ? '✓ ' : (i + 1) + '. ') + label));
+  return [
+    kopf('Bericht ' + b.id + ', ' + b.monteur + ', ' + b.datum, b.kunde + ', ' + b.auftraggeber,
+      el('button', { klasse: 'knopf k-still', onclick: () => gehe('berichte') }, 'Zurück zur Liste')),
+    el('div', { klasse: 'bahn' },
+      el('div', { klasse: 'stapel' },
+        el('div', { klasse: 'schritte' }, leiste),
+        (teile[zustand.schritt] || schrittAufnahme)(b)))
+  ];
+}
+
+function schrittAufnahme(b) {
+  const fotos = b.fotos.map(f => el('div', { klasse: 'foto' },
+    el('div', { klasse: 'foto-nr', 'aria-hidden': 'true', text: String(f.nr) }),
+    el('div', { klasse: 'foto-text' },
+      el('span', { klasse: 'liste-titel', text: f.was }),
+      el('span', { klasse: 'liste-sub', text: 'aufgenommen um ' + f.zeit + ' Uhr' }))));
+
+  const links = el('div', { klasse: 'stapel' },
+    karte('Die Sprachnotiz, Wort für Wort',
+      [el('span', { klasse: 'pille p-grau', text: b.aufnahme })],
+      el('div', { klasse: 'karte-leib' },
+        el('p', { klasse: 'kasten-text', text: b.transkript }))),
+    karte('Die Fotos', [el('span', { klasse: 'pille p-signal', text: b.fotos.length + ' Stück' })],
+      el('div', { klasse: 'karte-leib stapel' },
+        el('div', { klasse: 'kasten grau' },
+          el('p', { klasse: 'kasten-titel', text: 'Im Prototyp stehen die Fotos als Beschreibung' }),
+          el('p', { klasse: 'kasten-text',
+            text: 'Es geht hier um den Ablauf, nicht um Bilder. In der echten Anwendung siehst du an dieser Stelle das Foto selbst, mit derselben Uhrzeit daneben.' })),
+        fotos)));
+
+  const rechts = el('div', { klasse: 'stapel' },
+    karte('Was der Assistent hier weiß', null,
+      el('div', { klasse: 'karte-leib stapel' },
+        el('div', { klasse: 'kasten signal' },
+          el('p', { klasse: 'kasten-titel', text: 'Aufgenommen' }),
+          el('p', { klasse: 'kasten-text',
+            text: b.monteur + ' am ' + b.datum + '\n' + b.baustelle + '\n' + b.auftrag })),
+        el('button', { klasse: 'knopf k-rand',
+          onclick: () => { zustand.schritt = 'bericht'; zeichne(); } }, 'Weiter zum Bericht'))));
+
+  return el('div', { klasse: 'gitter g-haupt' }, links, rechts);
+}
+
+function schrittBericht(b) {
+  const belegt = b.erkannt.filter(e => e.güte !== 'fehlt');
+  const fehlt = luecken(b);
+
+  const zeilen = belegt.map(e => el('div', { klasse: 'feld' },
+    el('label', { klasse: 'feld-label', for: 'e-' + b.id + '-' + e.feld }, e.feld),
+    wertFeld({ id: 'e-' + b.id + '-' + e.feld }, e.wert),
+    el('p', { klasse: 'beleg' }, gütePille(e.güte), el('span', { text: e.beleg }))));
+
+  const luecke = fehlt.map(e => el('div', { klasse: 'feld' },
+    el('label', { klasse: 'feld-label', for: 'l-' + b.id + '-' + e.feld }, e.feld + ', fehlt'),
+    el('input', { id: 'l-' + b.id + '-' + e.feld, type: 'text', placeholder: 'noch offen' }),
+    el('p', { klasse: 'beleg', text: e.beleg })));
+
+  const links = el('div', { klasse: 'stapel' },
+    karte('Das steht im Bericht',
+      [el('span', { klasse: 'pille p-signal', text: belegt.length + ' belegt' }),
+       fehlt.length ? el('span', { klasse: 'pille p-rot', text: fehlt.length + ' offen' }) : null],
+      el('div', { klasse: 'karte-leib stapel' }, zeilen)),
+    fehlt.length ? karte('Das steht nicht im Bericht', null,
+      el('div', { klasse: 'karte-leib stapel' },
+        el('div', { klasse: 'kasten rot' },
+          el('p', { klasse: 'kasten-titel', text: 'Wird nicht ergänzt' }),
+          el('p', { klasse: 'kasten-text',
+            text: 'Diese Angaben hat niemand gesagt und kein Foto zeigt sie. Der Assistent erfindet sie nicht, er lässt die Lücke stehen und fragt beim Monteur nach.' })),
+        luecke)) : null);
+
+  const zeitKasten = b.zeitpruefung
+    ? karte('Zeit, zwei Quellen', [el('span', { klasse: 'pille p-gold', text: 'Abweichung' })],
+        el('div', { klasse: 'karte-leib stapel' },
+          el('div', { klasse: 'kasten gold' },
+            el('p', { klasse: 'kasten-titel', text: 'Gesagt ' + b.zeitpruefung.gesagt }),
+            el('p', { klasse: 'kasten-text', text: 'Fotos belegen ' + b.zeitpruefung.fotos })),
+          el('p', { klasse: 'beleg', text: b.zeitpruefung.hinweis })))
+    : karte('Zeit', [el('span', { klasse: 'pille p-gruen', text: 'ohne Widerspruch' })],
+        el('div', { klasse: 'karte-leib' },
+          el('p', { klasse: 'kasten-text',
+            text: 'Die genannte Zeit und die Zeitstempel der Fotos widersprechen sich hier nicht.' })));
+
+  const rechts = el('div', { klasse: 'stapel' }, zeitKasten,
+    karte('Nächster Schritt', null,
+      el('div', { klasse: 'karte-leib stapel' },
+        el('button', { klasse: 'knopf k-rand',
+          onclick: () => { zustand.schritt = 'buero'; zeichne(); } }, 'Weiter zu den Zahlen fürs Büro'))));
+
+  return el('div', { klasse: 'gitter g-haupt' }, links, rechts);
+}
+
+function schrittBuero(b) {
+  const durch = freigegebenePosten(b);
+  const warten = offenePosten(b);
+
+  const zeilen = b.abrechenbar.map(p => el('tr', {},
+    el('td', {}, el('strong', { text: p.name }),
+      el('span', { klasse: 'liste-sub', text: p.beleg })),
+    el('td', { klasse: 'zahl', text: zahl(p.menge) }),
+    el('td', {}, bestaetigungPille(p)),
+    /* Drei Zustaende, nicht zwei. Eine abgeschaltete Position geht durch die
+       Bestaetigungspruefung und wuerde hier ihren Geldwert zeigen, waehrend
+       die Summe darunter sie ausschliesst. Der Bildschirm haette dann zwei
+       verschiedene Wahrheiten gezeigt, ohne dass irgendwo ein Fehler steht. */
+    !gehtDurch(p)
+      ? el('td', { klasse: 'zahl offen-zelle', text: 'wartet' })
+      : !preisOk(p)
+        ? el('td', { klasse: 'zahl offen-zelle', text: 'ohne Preis' })
+        : el('td', { klasse: 'zahl', text: eur(p.menge * preisVon(p.name)) })));
+
+  const tabelle = b.abrechenbar.length
+    ? el('div', { klasse: 'tabelle-rahmen' },
+        el('table', { 'aria-label': 'Was aus dem Bericht ins Büro geht, mit Menge, Art und Wert' },
+          el('thead', {}, el('tr', {},
+            ['Position', 'Menge', 'Art', 'Wert'].map(t => el('th', { scope: 'col', text: t })))),
+          el('tbody', {}, zeilen)))
+    : el('div', { klasse: 'karte-leib' },
+        el('div', { klasse: 'kasten grau' },
+          el('p', { klasse: 'kasten-titel', text: 'Nichts Zusätzliches' }),
+          el('p', { klasse: 'kasten-text',
+            text: 'Aus diesem Bericht folgt keine zusätzliche Position. Der Auftrag lief genau wie beauftragt.' })));
+
+  const wartenKarte = warten.length
+    ? karte('Was noch nicht ins Büro geht',
+        [el('span', { klasse: 'pille p-rot', text: eur(wert(warten)) })],
+        el('div', { klasse: 'karte-leib stapel' },
+          el('div', { klasse: 'kasten rot' },
+            el('p', { klasse: 'kasten-titel', text: 'Ohne Bestätigung kein Nachtrag' }),
+            el('p', { klasse: 'kasten-text',
+              text: 'Der Punkt ist belegt, aber der Kunde hat ihn nicht bestätigt. Er geht als offener Nachtrag ins Büro und bleibt dort von der Rechnung fern, bis die Bestätigung da ist.' })),
+          warten.map(p => el('div', { klasse: 'kasten grau' },
+            el('p', { klasse: 'kasten-titel', text: postenName(p) }),
+            el('p', { klasse: 'kasten-text', text: p.beleg })))))
+    : null;
+
+  /* Eine Position ohne Preis nennt ihren Grund. Ohne diese Karte sieht der
+     Betrieb nur „ohne Preis" in der Tabelle und sucht den Fehler beim Kunden,
+     obwohl er die Position selbst abgeschaltet hat. */
+  const ohnePreisKarte = ohnePreis(b).length
+    ? karte('Was der Assistent nicht weitergibt',
+        [el('span', { klasse: 'pille p-rot', text: String(ohnePreis(b).length) })],
+        el('div', { klasse: 'karte-leib stapel' },
+          el('div', { klasse: 'kasten rot' },
+            el('p', { klasse: 'kasten-titel', text: 'Das ist kein Kundenthema, sondern deins' }),
+            el('p', { klasse: 'kasten-text',
+              text: 'Die Arbeit ist erbracht und belegt. Sie geht trotzdem nicht ins Büro, weil im Betrieb gerade kein Preis dafür steht. Der Assistent lässt sie nicht still weg, er schreibt sie in den Bericht und sagt es dir.' })),
+          ohnePreis(b).map(p => el('div', { klasse: 'kasten grau' },
+            el('p', { klasse: 'kasten-titel', text: postenName(p) }),
+            el('p', { klasse: 'kasten-text', 'data-grund': 'ja', text: preisGrund(p) })))))
+    : null;
+
+  const stundenKarte = b.stundenHinweis
+    ? karte('Warum die Stunden hier nicht auftauchen',
+        [el('span', { klasse: 'pille p-gold', text: 'Einheitspreise' })],
+        el('div', { klasse: 'karte-leib' },
+          el('div', { klasse: 'kasten gold' },
+            el('p', { klasse: 'kasten-titel', text: 'Nicht zweimal für dieselbe Arbeit' }),
+            el('p', { klasse: 'kasten-text', text: b.stundenHinweis }))))
+    : null;
+
+  return el('div', { klasse: 'stapel' },
+    stundenKarte,
+    ohnePreisKarte,
+    karte('Was aus dem Bericht folgt',
+      [el('span', { klasse: 'pille p-gruen', text: durch.length + (durch.length === 1 ? ' geht durch' : ' gehen durch') }),
+       warten.length ? el('span', { klasse: 'pille p-rot', text: warten.length + ' wartet' }) : null],
+      tabelle),
+    wartenKarte,
+    el('div', {}, el('button', { klasse: 'knopf k-rand',
+      onclick: () => { zustand.schritt = 'freigabe'; zeichne(); } }, 'Weiter zur Freigabe')));
+}
+
+/* Der Schlusssatz nennt GENAU die Quellen, aus denen dieser Bericht
+   wirklich stammt. Vorher stand dort pauschal „aus der Sprachnotiz und den
+   Fotos", obwohl eine Zeile vom Standort des Geraets kam. Ein Satz ueber
+   die Herkunft ist selbst eine Behauptung und wird genauso belegt wie die
+   Zeilen darueber. Dazu traegt jetzt jede Zeile ihren Beleg mit in den
+   ausgegebenen Text, sonst gilt „Beleg an jeder Zeile" nur intern. */
+const QUELLENWORT = { gesagt: 'der Sprachnotiz', foto: 'den Fotos', 'gerät': 'dem Gerätestandort' };
+
+function berichtstext(b) {
+  const belegt = b.erkannt.filter(e => e.güte !== 'fehlt');
+  const zeilen = belegt.map(e => e.feld + ', ' + e.wert + ' (' + e.beleg + ')');
+  const quellen = [];
+  for (const e of belegt) {
+    const wort = QUELLENWORT[e.güte];
+    if (wort && quellen.indexOf(wort) === -1) quellen.push(wort);
+  }
+  const fehlt = luecken(b).map(e => e.feld);
+  const kopfzeile = 'Arbeitsbericht ' + b.id + '\n' + b.baustelle + ', ' + b.datum +
+    '\nAusgeführt von ' + b.monteur;
+  const offen = fehlt.length
+    ? '\n\nNoch offen, ' + fehlt.join(', ') + '. Diese Angaben lagen bei der Aufnahme nicht vor.'
+    : '';
+  const nachtrag = offenePosten(b).length
+    ? '\n\nZur Bestätigung, ' + offenePosten(b).map(postenName).join(', ') +
+      '. Bis dahin wird der Punkt nicht abgerechnet.'
+    : '';
+  const quellensatz = quellen.length === 1
+    ? '\n\nAlle Angaben stammen aus ' + quellen[0] + ' dieses Einsatzes.'
+    : '\n\nAlle Angaben stammen aus ' + quellen.slice(0, -1).join(', ') +
+      ' und ' + quellen[quellen.length - 1] + ' dieses Einsatzes.';
+  /* Eine Position, die der Betrieb abgeschaltet hat, wird im Bericht
+     GENANNT statt stillschweigend weggelassen. Sie ist gearbeitet worden,
+     nur nicht abgerechnet, und genau das muss dastehen. */
+  const kein = ohnePreis(b).length
+    ? '\n\nNicht abgerechnet, ' + ohnePreis(b).map(postenName).join(', ') +
+      '. Die Arbeit ist erbracht, im Betrieb steht dafür gerade kein Preis.'
+    : '';
+  const schluss = ein().schlusssatz.trim() ? '\n\n' + ein().schlusssatz.trim() : '';
+  return kopfzeile + '\n\n' + zeilen.join('\n') + offen + nachtrag + kein + quellensatz + schluss;
+}
+
+function schrittFreigabe(b) {
+  const frei = istFreigegeben(b);
+  const schluessel = zustand.gewerk + b.id;
+  const warten = offenePosten(b);
+
+  const angaben = [['Kunde', b.kunde + ', ' + b.auftraggeber], ['Baustelle', b.baustelle],
+    ['Monteur', b.monteur + ', ' + b.datum],
+    ['Belegte Angaben', String(b.erkannt.filter(e => e.güte !== 'fehlt').length)],
+    ['Offene Lücken', String(luecken(b).length)],
+    ['Geht ins Büro', eur(wert(freigegebenePosten(b)))],
+    ['Wartet auf Bestätigung', warten.length ? eur(wert(warten)) : 'nichts']
+  ].map(([k, v]) => el('div', { klasse: 'beleg' },
+    el('dt', { klasse: 'feld-label', style: 'min-width:170px', text: k }),
+    el('dd', { text: v })));
+
+  const befunde = haltBefunde(b);
+  const moeglich = freigabeMoeglich(b);
+  const knopf = frei
+    ? el('button', { klasse: 'knopf k-rand',
+        onclick: () => { delete zustand.freigegeben[schluessel]; zeichne(); } },
+        'Freigabe zurücknehmen')
+    : el('button', { klasse: 'knopf k-signal', disabled: !moeglich,
+        onclick: () => { if (moeglich) { zustand.freigegeben[schluessel] = true; zeichne(); } } },
+        moeglich ? 'Bericht freigeben' : 'Freigabe durch deine Regel angehalten');
+
+  const links = karte('Freigabe',
+    [el('span', { klasse: 'pille ' + (frei ? 'p-gruen' : 'p-rot'),
+      text: frei ? 'freigegeben' : 'noch nicht freigegeben' })],
+    el('div', { klasse: 'karte-leib stapel' },
+      el('div', { klasse: 'kasten ' + (frei ? 'gruen' : 'grau') },
+        el('p', { klasse: 'kasten-titel', text: 'Der letzte Klick gehört dir' }),
+        el('p', { klasse: 'kasten-text', text: frei
+          ? 'Du hast den Bericht freigegeben. Er ist zum Versand vorgemerkt und die Zahlen sind fürs Büro vorgemerkt.'
+          : 'Der Assistent hat den Bericht fertig gemacht. Ohne deinen Klick geht nichts raus.' })),
+      el('dl', { klasse: 'stapel', style: 'gap:9px' }, angaben),
+      /* Was die angelernten Regeln an diesem Bericht bewirken. Der Kasten
+         steht VOR dem Knopf, sonst sucht der Nutzer den Grund erst,
+         nachdem der Knopf nicht ging. */
+      befunde.length ? el('div', { klasse: 'stapel' },
+        befunde.map(x => el('div', { klasse: 'kasten ' + (x.art === 'sperre' ? 'rot' : 'signal') },
+          el('p', { klasse: 'kasten-titel',
+            text: x.art === 'sperre' ? 'Angehalten durch deine Regel' : 'Aus deiner Einstellung' }),
+          el('p', { klasse: 'kasten-text', text: x.text })))) : null,
+      el('div', { klasse: 'feld' },
+        el('label', { klasse: 'feld-label', for: 'notiz' }, 'Notiz für dich oder den Monteur'),
+        el('textarea', { id: 'notiz', rows: '3', placeholder: 'Optional',
+          oninput: ev => { zustand.notizen[schluessel] = ev.target.value; } },
+          zustand.notizen[schluessel] || '')),
+      knopf));
+
+  const rechts = el('div', { klasse: 'stapel' },
+    karte('Der Bericht, wie er rausgeht', null,
+      el('div', { klasse: 'karte-leib stapel' },
+        el('div', { klasse: 'feld' },
+          el('label', { klasse: 'feld-label', for: 'berichtstext' }, 'Text, kannst du jederzeit ändern'),
+          el('textarea', { id: 'berichtstext', rows: '14' }, berichtstext(b))))),
+    karte('Wohin er geht', null,
+      el('div', { klasse: 'karte-leib stapel' },
+        ['Zum Kunden als PDF mit deinem Briefkopf und den Fotos',
+         'Ins Büro, als Stunden und Material für die nächste Rechnung',
+         'In die Akte der Baustelle, als Nachweis bei einer Reklamation'
+        ].map(t => el('p', { klasse: 'beleg' },
+          el('span', { klasse: 'pille p-gruen', text: '✓' }), el('span', { text: t }))),
+        el('div', { klasse: 'kasten grau' },
+          el('p', { klasse: 'kasten-titel', text: 'Prototyp' }),
+          el('p', { klasse: 'kasten-text',
+            text: 'Hier passiert nichts Echtes. Es geht kein Bericht raus und es wird nichts gespeichert.' })))));
+
+  return el('div', { klasse: 'gitter g-haupt' }, links, rechts);
+}
+
+/* ---------------------------------------------------------- Fürs Büro */
+function seiteBuero() {
+  const alle = [];
+  for (const b of berichte()) {
+    for (const p of b.abrechenbar) alle.push({ b: b, p: p });
+  }
+  const zeilen = alle.map(x => el('tr', {
+    klasse: 'klickbar',
+    onclick: () => { zustand.offen = x.b.id; zustand.seite = 'bericht';
+                     zustand.schritt = 'buero'; zeichne(); } },
+    el('td', {}, el('strong', { text: x.p.name }), el('br'),
+      el('span', { klasse: 'liste-sub', text: x.b.kunde + ', ' + x.b.id })),
+    el('td', { klasse: 'zahl', text: zahl(x.p.menge) }),
+    el('td', {}, bestaetigungPille(x.p)),
+    gehtDurch(x.p)
+      ? el('td', { klasse: 'zahl', text: eur(x.p.menge * (preisVon(x.p.name) || 0)) })
+      : el('td', { klasse: 'zahl offen-zelle', text: 'wartet' })));
+
+  const durch = alle.filter(x => gehtDurch(x.p));
+  const warten = alle.filter(x => !gehtDurch(x.p));
+  const summe = durch.reduce((s, x) => s + x.p.menge * (preisVon(x.p.name) || 0), 0);
+  const wartendSumme = warten.reduce((s, x) => s + x.p.menge * (preisVon(x.p.name) || 0), 0);
+
+  const tabelle = el('div', { klasse: 'tabelle-rahmen' },
+    el('table', { 'aria-label': 'Alle Positionen aus allen Berichten mit Menge, Art und Wert' },
+      el('thead', {}, el('tr', {},
+        ['Position', 'Menge', 'Art', 'Wert'].map(t => el('th', { scope: 'col', text: t })))),
+      el('tbody', {}, zeilen)));
+
+  return [
+    kopf('Was aus den Berichten in die Rechnungen wandert', 'Fürs Büro'),
+    el('div', { klasse: 'bahn' },
+      el('div', { klasse: 'stapel' },
+        el('div', { klasse: 'gitter g2' },
+          kennzahl('Geht durch', eur(summe),
+            durch.length + (durch.length === 1 ? ' Position, bestätigt oder ohne Nachtrag'
+                                               : ' Positionen, bestätigt oder ohne Nachtrag'), 'gut'),
+          kennzahl('Wartet auf Bestätigung', eur(wartendSumme),
+            warten.length + (warten.length === 1 ? ' Position, belegt aber nicht freigegeben'
+                                                : ' Positionen, belegt aber nicht freigegeben'), wartendSumme ? 'warn' : '')),
+        karte('Alle Positionen aus allen Berichten', null, tabelle)))
+  ];
+}
+
+/* ------------------------------------------------------- Anlernen */
+/* Dieser Bildschirm darf nie reine Anzeige sein. Wer dort einen Preis
+   geaendert haette, haette danach geglaubt, der Assistent rechne damit.
+   Das ist keine fehlende Funktion, sondern eine falsche Zusage. Jede
+   Steuerung hier wirkt jetzt sofort bis in den Bericht, in die Zahlen
+   fuers Buero und in die Freigabe. */
+
+/* Wie oft eine Position im Bestand ueberhaupt vorkommt. Der Beleg neben
+   jedem Preis beantwortet die Frage „was passiert, wenn ich das hier
+   anfasse", BEVOR jemand es anfasst. */
+const posInBerichten = name => berichte().filter(b =>
+  b.abrechenbar.some(p => p.name === name)).length;
+
+const fuersBueroGesamt = () => cent(offeneBerichte()
+  .reduce((s, b) => s + wert(freigegebenePosten(b)), 0));
+
+/* Reihenfolge der Angaben: Zustand, Titel, Erklaerung, Beleg, Klick. Der
+   Beleg steht VOR dem Klick, weil jeder Aufruf ihn neu setzt. */
+function kippZeile(an, titel, text, belegText, beim) {
+  return el('div', { klasse: 'kippe-zeile' },
+    el('button', { klasse: 'kippe', role: 'switch', 'aria-checked': String(!!an),
+      'aria-label': titel, onclick: beim }, el('span', { klasse: 'kippe-knopf' })),
+    el('div', { klasse: 'kippe-text' },
+      el('b', { text: titel }),
+      el('span', { text: text }),
+      belegText ? el('span', { klasse: 'beleg', text: belegText }) : null));
+}
+
+function seiteAnlernen() {
+  const e = ein();
+  const jetzt = fuersBueroGesamt();
+  const standardWert = mitStandard(fuersBueroGesamt);
+  const differenz = cent(jetzt - standardWert);
+  const posAn = g().preisliste.filter(p => posAktiv(p.name)).length;
+  const regelnAn = [e.nachtragRegel.an, e.luckenRegel.an, e.preisRegel.an].filter(Boolean).length;
+  const gehalten = offeneBerichte().filter(b => angehalten(b)).length;
+  /* Eine Regel, die ich heute einschalte, betrifft auch das, was gestern
+     rausging. Das wird getrennt gezaehlt, sonst meldet der Kasten „nichts
+     angehalten", waehrend auf einem freigegebenen Bericht eine greifende
+     Regel steht. */
+  const nachtraeglich = berichte().filter(b => istFreigegeben(b) && angehalten(b)).length;
+
+  const preise = el('div', { klasse: 'tabelle-rahmen' },
+    el('table', { 'aria-label': 'Preisliste des Betriebs mit Preis, Einheit und Schalter' },
+      el('thead', {}, el('tr', {},
+        ['Position', 'Preis', 'Einheit', 'Im Einsatz'].map(t => el('th', { scope: 'col', text: t })))),
+      el('tbody', {}, g().preisliste.map((p, i) => {
+        const feldId = 'preis-' + i;
+        const anzahl = posInBerichten(p.name);
+        return el('tr', {},
+          el('td', {}, el('strong', { text: p.name }),
+            el('span', { klasse: 'liste-sub',
+              text: anzahl === 0 ? 'kommt im Bestand nicht vor'
+                : anzahl === 1 ? 'steht in einem Bericht'
+                : 'steht in ' + anzahl + ' Berichten' })),
+          el('td', {},
+            el('input', { id: feldId, klasse: 'zahl-feld', type: 'number',
+              min: '0', step: '0.1', value: String(preisVon(p.name)),
+              'aria-label': 'Preis für ' + p.name,
+              /* `change` statt `input`, sonst waere der Schreibfokus schon
+                 nach der ersten Ziffer weg. */
+              onchange: ev => {
+                const w = preisOderNull(ev.target.value);
+                /* Ein geleertes oder unlesbares Feld setzt KEINEN Preis auf
+                   null. Es faellt sichtbar auf den alten Wert zurueck. */
+                if (w === null) { ev.target.value = String(preisVon(p.name)); return; }
+                ein().preise[p.name] = w;
+                zeichneMitFokus(feldId);
+              } })),
+          el('td', { text: p.einheit }),
+          el('td', {},
+            el('button', { klasse: 'kippe', role: 'switch',
+              'aria-checked': String(posAktiv(p.name)),
+              'aria-label': p.name + ' im Einsatz',
+              onclick: () => { ein().aktiv[p.name] = !posAktiv(p.name); zeichne(); } },
+              el('span', { klasse: 'kippe-knopf' }))));
+      }))));
+
+  const regelzeilen = el('div', { klasse: 'karte-leib' },
+    kippZeile(e.nachtragRegel.an, 'Kein Bericht raus, solange ein Nachtrag unbestätigt ist',
+      'Hat der Kunde einen Nachtrag noch nicht bestätigt, hält er den ganzen Bericht an.',
+      'trifft gerade ' + berichte().filter(b => offenePosten(b).length).length + ' von ' + berichte().length + ' Berichten',
+      () => { e.nachtragRegel.an = !e.nachtragRegel.an; zeichne(); }),
+    kippZeile(e.luckenRegel.an, 'Kein Bericht raus, solange eine Angabe fehlt',
+      'Fehlt im Bericht eine Angabe, die der Monteur nicht genannt hat, hält er ihn an.',
+      'trifft gerade ' + berichte().filter(b => luecken(b).length).length + ' von ' + berichte().length + ' Berichten',
+      () => { e.luckenRegel.an = !e.luckenRegel.an; zeichne(); }),
+    kippZeile(e.preisRegel.an, 'Kein Bericht raus mit einer Position ohne Preis',
+      'Ist eine Position abgeschaltet oder ohne Preis, hält er den Bericht an, statt sie stillschweigend wegzulassen.',
+      'trifft gerade ' + berichte().filter(b => ohnePreis(b).length).length + ' von ' + berichte().length + ' Berichten',
+      () => { e.preisRegel.an = !e.preisRegel.an; zeichne(); }));
+
+  const eigene = el('div', { klasse: 'karte-leib stapel' },
+    el('p', { klasse: 'feld-label', text: 'Fest eingebaut, die kannst du nicht abschalten' }),
+    GEMEINSAME_REGELN.map(r => el('p', { klasse: 'beleg' },
+      el('span', { klasse: 'pille p-grau', text: '§' }), el('span', { text: r }))),
+    el('p', { klasse: 'feld-label', text: 'Deine eigenen Regeln' }),
+    e.eigeneRegeln.length
+      ? e.eigeneRegeln.map((r, i) => el('div', { klasse: 'beleg' },
+          el('span', { klasse: 'pille p-signal', text: '§' }),
+          el('span', { text: r }),
+          el('button', { klasse: 'knopf k-still', style: 'min-height:0;padding:2px 8px',
+            'aria-label': 'Regel entfernen',
+            onclick: () => { e.eigeneRegeln.splice(i, 1); zeichne(); } }, '✕')))
+      : el('p', { klasse: 'beleg' },
+          el('span', { klasse: 'pille p-grau', text: '0' }),
+          el('span', { text: 'Keine eigene Regel. Es gelten nur die festen darüber.' })),
+    el('div', { klasse: 'feld' },
+      el('label', { klasse: 'feld-label', for: 'regel-neu' }, 'Eigene Regel dazuschreiben'),
+      el('input', { id: 'regel-neu', type: 'text', maxlength: '160',
+        value: zustand.entwurfRegel[zustand.gewerk],
+        placeholder: 'In deinen Worten, ganze Sätze wirken besser als Stichworte',
+        /* Der Entwurf wandert bei jedem Tastendruck in den Zustand DIESES
+           Gewerks, damit er beim Umschalten nicht im fremden Betrieb
+           landet. Neu gezeichnet wird dabei nicht, nur die Marke oben. */
+        oninput: ev => {
+          zustand.entwurfRegel[zustand.gewerk] = ev.target.value;
+          standAktualisieren();
+        },
+        onkeydown: ev => { if (ev.key === 'Enter') regelUebernehmen(); } }),
+      el('button', { klasse: 'knopf k-signal', style: 'margin-top:8px; align-self:flex-start',
+        onclick: () => regelUebernehmen() }, 'Regel übernehmen')));
+
+  const grenzen = ['Er war nicht dabei. Er kennt nur, was gesagt oder fotografiert wurde.',
+    'Er entscheidet nicht, ob die genannte Zeit oder der Zeitstempel stimmt. Er zeigt beides.',
+    'Er holt keine Bestätigung beim Kunden ein. Er sagt dir, dass sie fehlt.',
+    'Er beurteilt keine Mangelursache. Was strittig ist, bleibt eine Beschreibung mit Foto.',
+    'Er verschickt nichts von allein, auch nicht an den Kunden.'
+  ].map(t => el('p', { klasse: 'beleg' },
+    el('span', { klasse: 'pille p-rot', text: '✗' }), el('span', { text: t })));
+
+  return [
+    kopf('Preise, Positionen, Regeln und Schlusssatz, alles wirkt sofort', 'Assistent anlernen',
+      el('span', { id: 'stand-pille', klasse: 'pille ' + (geaendert() ? 'p-signal' : 'p-grau'),
+        text: geaendert() ? 'geändert' : 'Standard' })),
+    el('div', { klasse: 'bahn' },
+      el('div', { klasse: 'stapel' },
+
+        /* ------------------------------------------------ Wirkung oben */
+        el('section', { klasse: 'karte' },
+          el('div', { klasse: 'karte-kopf' },
+            el('h2', { klasse: 'karte-titel', text: 'Was deine Einstellungen bewirken' }),
+            el('button', { id: 'knopf-zuruecksetzen', klasse: 'knopf k-rand',
+              disabled: geaendert() ? null : true,
+              onclick: () => {
+                zustand.ein[zustand.gewerk] = werkseinstellung(zustand.gewerk);
+                zustand.entwurfRegel[zustand.gewerk] = '';
+                zeichne();
+              } }, 'Auf Standard zurücksetzen')),
+          el('div', { klasse: 'karte-leib' },
+            el('div', { klasse: 'gitter g4' },
+              el('div', { klasse: 'kennzahl' },
+                el('div', { klasse: 'kennzahl-label', text: 'Geht ins Büro' }),
+                el('div', { klasse: 'kennzahl-wert zahl', text: eur(jetzt) }),
+                el('div', { klasse: 'kennzahl-note ' + (differenz === 0 ? '' : differenz > 0 ? 'gut' : 'warn'),
+                  text: differenz === 0 ? 'wie im Standard'
+                    : (differenz > 0 ? 'plus ' : 'minus ') + eur(Math.abs(differenz)) + ' gegenüber dem Standard' })),
+              el('div', { klasse: 'kennzahl' },
+                el('div', { klasse: 'kennzahl-label', text: 'Positionen im Einsatz' }),
+                el('div', { klasse: 'kennzahl-wert zahl', text: posAn + ' von ' + g().preisliste.length }),
+                el('div', { klasse: 'kennzahl-note ' + (posAn === 0 ? 'warn' : ''),
+                  text: posAn === 0 ? 'Ohne Position geht nichts ins Büro' : 'gibt der Assistent weiter' })),
+              el('div', { klasse: 'kennzahl' },
+                el('div', { klasse: 'kennzahl-label', text: 'Regeln aktiv' }),
+                el('div', { klasse: 'kennzahl-wert zahl', text: regelnAn + ' von 3' }),
+                el('div', { klasse: 'kennzahl-note', text: 'dazu ' + GEMEINSAME_REGELN.length + ' feste, die bleiben' })),
+              el('div', { klasse: 'kennzahl' },
+                el('div', { klasse: 'kennzahl-label', text: 'Angehaltene Berichte' }),
+                el('div', { klasse: 'kennzahl-wert zahl', text: String(gehalten) }),
+                el('div', { klasse: 'kennzahl-note ' + (gehalten || nachtraeglich ? 'warn' : ''),
+                  text: nachtraeglich
+                    ? (gehalten ? gehalten + ' offen, ' : '') + nachtraeglich + ' schon freigegeben und nachträglich betroffen'
+                    : gehalten ? 'warten auf dich' : 'nichts wird angehalten' })))),
+          el('div', { klasse: 'karte-leib' },
+            el('div', { klasse: 'kasten grau' },
+              el('p', { klasse: 'kasten-titel', text: 'Das hier ist keine Anzeige' }),
+              el('p', { klasse: 'kasten-text',
+                text: 'Jede Zahl und jeder Schalter auf dieser Seite wirkt sofort. Änderst du einen Preis, steht er in den Zahlen fürs Büro. Schaltest du eine Position ab, gibt der Assistent sie nicht weiter und schreibt in den Bericht, dass sie nicht abgerechnet wird.' })))),
+
+        karte('Was aus einem Bericht abgerechnet werden kann',
+          [el('span', { klasse: 'pille p-signal', text: g().preisliste.length + ' Positionen' })], preise),
+        karte('Regeln, an die er sich hält',
+          [el('span', { klasse: 'pille p-grau', text: regelnAn + ' von 3 eingeschaltet' })],
+          el('div', {}, regelzeilen, eigene)),
+        karte('Der Satz unter jedem Bericht', null,
+          el('div', { klasse: 'karte-leib stapel' },
+            el('div', { klasse: 'feld' },
+              el('label', { klasse: 'feld-label', for: 'schlusssatz' }, 'Steht am Ende jedes Berichts, leer lassen geht auch'),
+              el('textarea', { id: 'schlusssatz', rows: '2', maxlength: '160',
+                onchange: ev => {
+                  ein().schlusssatz = einzeilig(ev.target.value);
+                  zeichneMitFokus('schlusssatz');
+                } }, e.schlusssatz)),
+            el('p', { klasse: 'beleg' },
+              el('span', { klasse: 'pille p-grau', text: '✎' }),
+              el('span', { text: 'Der Rest des Berichts wird nicht getippt, sondern belegt. Dieser eine Satz ist deiner.' })))),
+        karte('Was der Assistent bewusst nicht kann', null,
+          el('div', { klasse: 'karte-leib stapel' },
+            el('div', { klasse: 'kasten grau' },
+              el('p', { klasse: 'kasten-titel', text: 'Damit klar ist, wo die Grenze liegt' }),
+              el('p', { klasse: 'kasten-text',
+                text: 'Ein Werkzeug, das seine Grenze nicht nennt, verspricht still etwas, das niemand zugesagt hat.' })),
+            grenzen))))
+  ];
+}
+
+/* Den Entwurf zur Regel machen. Steht in einer eigenen Funktion, weil ihn
+   zwei Wege ausloesen, der Knopf und die Eingabetaste. Waere er nur am
+   Knopf, ginge der getippte Satz bei jedem Enter still verloren. */
+function regelUebernehmen() {
+  const roh = einzeilig(zustand.entwurfRegel[zustand.gewerk]).trim();
+  if (!roh) return;
+  ein().eigeneRegeln.push(roh);
+  zustand.entwurfRegel[zustand.gewerk] = '';
+  zeichne();
+}
+
+
+function zeichne() {
+  const seiten = {
+    uebersicht: seiteUebersicht, berichte: seiteBerichte,
+    bericht: seiteBericht, buero: seiteBuero, anlernen: seiteAnlernen
+  };
+  const inhalt = el('div', { klasse: 'inhalt' },
+    (seiten[zustand.seite] || seiteUebersicht)(),
+    el('footer', { klasse: 'fuss' },
+      g().betrieb + ' · ' + g().zusatz + ' · Arbeitsbericht-Assistent aus dem KI-Büro für Handwerksbetriebe. ' +
+      'Prototyp mit Beispieldaten, Betriebe, Kunden und Monteure sind erfunden, es wird nichts gespeichert und nichts versendet.'));
+  const wurzel = document.getElementById('wurzel');
+  wurzel.replaceChildren(el('div', { klasse: 'app' }, navigation(), inhalt));
+  hashSchreiben();
+}
+
+window.addEventListener('hashchange', () => { hashLesen(); zeichne(); });
+hashLesen();
+zeichne();
+</script>
+</body>
+</html>
